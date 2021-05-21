@@ -1,5 +1,5 @@
 import {defs, tiny} from './examples/common.js';
-//HELLOOOOO SENPAIIII
+
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
 } = tiny;
@@ -70,6 +70,16 @@ export class Final_Project extends Scene {
     }
 
     draw_arm(context, program_state, model_transform, t){
+        let hand_transform = model_transform
+                                .times(Mat4.scale(0.5,0.5,0.5))
+                                .times(Mat4.translation(0,0,-2))
+                                ;
+        model_transform = model_transform
+                                .times(Mat4.scale(0.3,0.3,2.5))
+                                .times(Mat4.translation(0,0,0.3))                                
+                                ;
+        this.shapes.cc.draw(context, program_state, model_transform, this.materials.pants);
+        this.shapes.s.draw(context, program_state, hand_transform, this.materials.test);
         return model_transform;
     }
 
@@ -94,12 +104,23 @@ export class Final_Project extends Scene {
         // lighting from asssignment 3 
         const light_position = vec4(0, 0, 0, 1);
         program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 10**sun_scaler)];
+        
+        let body_transform = Mat4.identity().times(Mat4.rotation(-Math.PI/2,1,0,0));
+        let arm_angle = Math.sin(2*t)/2;
+        let r_arm_transform = body_transform
+                            .times(Mat4.translation(1.9,0,0))
+                            .times(Mat4.translation(-1.25,0,1.5))
+                            .times(Mat4.rotation(arm_angle,1,0,0))
+                            .times(Mat4.translation(1.25,0,-1.5))
+                            .times(Mat4.rotation(-0.7,0,1,0));
+        let l_arm_transform = body_transform
+                            .times(Mat4.translation(-1.9,0,0))
+                            .times(Mat4.translation(-1.25,0,1.5))
+                            .times(Mat4.rotation(-arm_angle,1,0,0))
+                            .times(Mat4.translation(1.25,0,-1.5))
+                            .times(Mat4.rotation(0.7,0,1,0));
 
-        let body_transform = Mat4.identity().times(Mat4.rotation(80,1,0,0));
-        let r_arm_transform = body_transform;
-        let l_arm_transform = body_transform;
-
-        //body & leg
+        //body & legs
         this.shapes.cc.draw(context, program_state, body_transform.times(Mat4.scale(1,1,2)), this.materials.test);
         body_transform = body_transform.times(Mat4.translation(0,0,1));
         this.shapes.s.draw(context, program_state, body_transform.times(Mat4.scale(1,1,1)), this.materials.test);
@@ -111,7 +132,9 @@ export class Final_Project extends Scene {
         let r_leg_transform = body_transform.times(Mat4.translation(0.5,0,0));
         this.draw_leg(context, program_state, r_leg_transform, t);
 
-        
+        //arms
+        this.draw_arm(context, program_state, r_arm_transform, t);
+        this.draw_arm(context, program_state, l_arm_transform, t);
 
 //         if(this.attached !== undefined) {
 //             let desired = this.attached();
