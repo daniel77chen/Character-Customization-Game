@@ -66,7 +66,8 @@ export class Final_Project extends Scene {
     constructor() {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
         super();
-
+        
+        this.lower_clothing = this.upper_clothing = this.shoes = "";
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
                s: new defs.Subdivision_Sphere(4),
@@ -150,6 +151,7 @@ export class Final_Project extends Scene {
         this.new_line();
         
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
+
     this.key_triggered_button("Change skin to default", ["d"], this.set_mafu_skin_color);
     this.key_triggered_button("Change skin to sunburnt", ["h"], this.set_peach_skin_color);
     this.key_triggered_button("Change skin to banana", ["b"], this.set_yellow_skin_color);
@@ -311,8 +313,6 @@ export class Final_Project extends Scene {
             model_transform.times(Mat4.translation(0,-1.5,-.25))
                 .times(Mat4.scale(.2,.05,1))
             , eye_material);
-
-
     }
 
 
