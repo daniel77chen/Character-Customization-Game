@@ -8,7 +8,8 @@ export class Final_Project extends Scene {
     constructor() {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
         super();
-
+        
+        this.lower_clothing = this.upper_clothing = this.shoes = "";
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
                s: new defs.Subdivision_Sphere(4),
@@ -37,18 +38,29 @@ export class Final_Project extends Scene {
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
+        this.key_triggered_button("Reset Clothing", ["Control", "0"], () => {
+            this.lower_clothing = "";
+            this.upper_clothing = "";
+            this.shoes = "";
+        });
+        this.new_line();
+        this.key_triggered_button("Red Pants", ["Control", "1"], () => {
+             this.lower_clothing = "red_pants";
+        });
+        this.new_line();
+        this.key_triggered_button("Shorts", ["Control", "2"], () => {
+            this.lower_clothing = "shorts";
+        });
+        this.new_line();
+        this.key_triggered_button("Short Sleeve Shirt", ["Control", "3"], () => {
+            this.upper_clothing = "short_sleeve";
+        });
+        this.new_line();
+        this.key_triggered_button("Long Sleeve Shirt", ["Control", "4"], () => {
+            this.upper_clothing = "long_sleeve";
+        });
+        this.new_line();
 
-
-//////////////////////////////////////////    PROJECT 3    ////////////////////////////////////////////
-//         this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => "solar");
-//         this.new_line();
-//         this.key_triggered_button("Attach to planet 1", ["Control", "1"], () => this.attached = () => this.planet_1);
-//         this.key_triggered_button("Attach to planet 2", ["Control", "2"], () => this.attached = () => this.planet_2);
-//         this.new_line();
-//         this.key_triggered_button("Attach to planet 3", ["Control", "3"], () => this.attached = () => this.planet_3);
-//         this.key_triggered_button("Attach to planet 4", ["Control", "4"], () => this.attached = () => this.planet_4);
-//         this.new_line();
-//         this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);
     }
 
 
