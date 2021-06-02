@@ -127,7 +127,9 @@ export class Final_Project extends Scene {
         this.hair_color = hex_color("#755e48");
         this.is_wearing_shirt = this.is_wearing_pants = true;
         this.hair_style = HairStyles.HORN;
-        this.eye_style = EyeStyle.OPEN;
+        this.eye_style = EyeStyle.CRY;
+        this.mouth_open = false;
+        this.cry = true;
     }
 
     set_skin_color(col) {
@@ -189,9 +191,9 @@ export class Final_Project extends Scene {
     this.key_triggered_button("Sunburnt", ["Skin"], () => {this.set_skin_color("#ffb885")});
     this.key_triggered_button("Banana", ["Skin"], () => {this.set_skin_color("#edea47")});
     this.new_line();
-    this.key_triggered_button("Normal", ["Eye"], () => {this.eye_style = EyeStyle.OPEN});
-    this.key_triggered_button("Cry", ["Eye"], () => {this.eye_style = EyeStyle.CRY});
-    this.key_triggered_button("Anime", ["Eye"], () => {this.eye_style = EyeStyle.ANIME});
+    this.key_triggered_button("Normal", ["Eye"], () => {this.eye_style = EyeStyle.OPEN; this.cry = false;});
+    this.key_triggered_button("Cry", ["Eye"], () => {this.eye_style = EyeStyle.CRY; this.cry = true;});
+    this.key_triggered_button("Anime", ["Eye"], () => {this.eye_style = EyeStyle.ANIME; this.cry = false;});
     this.new_line();
     this.key_triggered_button("Is it wearing a shirt?", ["?"], () => {
             this.is_wearing_shirt ^= 1;
@@ -202,7 +204,7 @@ export class Final_Project extends Scene {
 
     }
 
-    draw_face(context, program_state, model_transform, t, skin_material, head_radius, tail_angle) {
+    draw_face(context, program_state, model_transform, t, skin_material, head_radius, tail_angle, eye_state) {
         let hair_material = this.materials.hair.override({color:this.hair_color});
         let eye_material = this.materials.eye;
         let eye_white = this.materials.eye.override({color:hex_color("#ffffff")});
@@ -373,7 +375,7 @@ export class Final_Project extends Scene {
                 ,skin_material);
 
         //eye
-        if (this.eye_style == EyeStyle.OPEN) {
+        if (eye_state == EyeStyle.OPEN || eye_state == EyeStyle.CRY) {
         this.shapes.t2.draw(context, program_state, 
             model_transform.times(Mat4.translation(-.5*head_radius+.3,-head_radius+1.5,-.26))
                 .times(Mat4.rotation(.2,1,0,0))
@@ -398,22 +400,8 @@ export class Final_Project extends Scene {
                 .times(Mat4.rotation(.3,0,1,0))
                 .times(Mat4.scale(.2,.2,.05))
                 ,eye_white);
-        this.shapes.s.draw(context, program_state, 
-            model_transform.times(Mat4.translation(-.5*head_radius+.1,-head_radius+1.35,-.4))
-                .times(Mat4.rotation(-.8,0,0,1))
-                .times(Mat4.rotation(.2,1,0,0))
-                .times(Mat4.rotation(-.3,0,1,0))
-                .times(Mat4.scale(.12,.15,.1))
-                ,tear);
-        this.shapes.s.draw(context, program_state, 
-            model_transform.times(Mat4.translation(.5*head_radius-.1,-head_radius+1.35,-.4))
-                .times(Mat4.rotation(.8,0,0,1))
-                .times(Mat4.rotation(.2,1,0,0))
-                .times(Mat4.rotation(.3,0,1,0))
-                .times(Mat4.scale(.12,.15,.1))
-                ,tear);
         }
-        else if (this.eye_style == EyeStyle.ANIME) {
+        else if (eye_state == EyeStyle.ANIME) {
         this.shapes.t2.draw(context, program_state, //L eye
             model_transform.times(Mat4.translation(-.5*head_radius+.3,-head_radius+1.5,-.234))
                 .times(Mat4.rotation(.2,1,0,0))
@@ -472,23 +460,56 @@ export class Final_Project extends Scene {
         else {
         //closed eye
         this.shapes.cube.draw(context, program_state, 
-            model_transform.times(Mat4.translation(-.85,-.9,-.3))
-                .times(Mat4.scale(.23,.1,.001))
+            model_transform.times(Mat4.translation(-.85,-.9,-.4))
+                .times(Mat4.rotation(-Math.PI/8,0,1,0))
+                .times(Mat4.scale(.25,.1,.1))
             , eye_material);
 
         this.shapes.cube.draw(context, program_state, 
-            model_transform.times(Mat4.translation(.85,-.9,-.3))
-                .times(Mat4.scale(.23,.1,.001))
+            model_transform.times(Mat4.translation(.85,-.9,-.4))
+                .times(Mat4.rotation(Math.PI/8,0,1,0))
+                .times(Mat4.scale(.25,.1,.1))
             , eye_material);
 
+        }
+
+        // cry?
+        if (this.cry) {
+            this.shapes.s.draw(context, program_state, 
+                model_transform.times(Mat4.translation(-.5*head_radius+.1,-head_radius+1.35,-.4))
+                    .times(Mat4.rotation(-.8,0,0,1))
+                    .times(Mat4.rotation(.2,1,0,0))
+                    .times(Mat4.rotation(-.3,0,1,0))
+                    .times(Mat4.scale(.12,.15,.1))
+                    ,tear);
+            this.shapes.s.draw(context, program_state, 
+                model_transform.times(Mat4.translation(.5*head_radius-.1,-head_radius+1.35,-.4))
+                    .times(Mat4.rotation(.8,0,0,1))
+                    .times(Mat4.rotation(.2,1,0,0))
+                    .times(Mat4.rotation(.3,0,1,0))
+                    .times(Mat4.scale(.12,.15,.1))
+                    ,tear);
         }
        
         
         //mouth
+        if (this.mouth_open) {
+            this.shapes.s.draw(context, program_state, 
+                model_transform.times(Mat4.translation(0,-1.5,-.3))
+                    .times(Mat4.scale(.28,.15,.1))
+                    ,eye_white);
+            this.shapes.s.draw(context, program_state, 
+                model_transform.times(Mat4.translation(0,-1.5,-.32))
+                    .times(Mat4.scale(.3,.18,.1))
+                    ,eye_material);            
+        }
+        else {
         this.shapes.cube.draw(context, program_state, 
             model_transform.times(Mat4.translation(0,-1.5,-.25))
                 .times(Mat4.scale(.2,.05,.0001))
             , eye_material);
+        }
+
     }
 
 
@@ -539,7 +560,17 @@ export class Final_Project extends Scene {
 //         program_state.set_camera(this.attached);
         program_state.projection_transform = Mat4.perspective(
             Math.PI / 4, context.width / context.height, .1, 1000);
-        
+
+        const BLINK_PERIOD = 5;
+        const mod_t = t % BLINK_PERIOD;
+        let eye_state = this.eye_style;
+        if (mod_t == 0) {
+            eye_state = this.eye_style;
+        }
+        else if (mod_t >= BLINK_PERIOD -1 && mod_t < BLINK_PERIOD) {
+            eye_state = EyeStyle.CLOSED;
+        }
+        //console.log(mod_t);
 
         // lighting from asssignment 3 
         const light_position = vec4(0, 10, 0, 1);
@@ -576,7 +607,7 @@ export class Final_Project extends Scene {
         let face_transform = ident
             .times(Mat4.rotation(-head_angle,1,0,0))
             .times(Mat4.translation(0,4.3,head_radius));
-        this.draw_face(context, program_state, face_transform, t, skin_material, head_radius, arm_angle/2);
+        this.draw_face(context, program_state, face_transform, t, skin_material, head_radius, arm_angle/2, eye_state);
 
         let neck_transform = face_transform.times(Mat4.translation(0,2-4.3,-head_radius))
              .times(Mat4.scale(.35,.4,.4));
