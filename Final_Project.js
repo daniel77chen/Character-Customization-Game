@@ -76,6 +76,15 @@ const EyeStyle = Object.freeze({
     CRY: 3
 });
 
+const MouthStyle = Object.freeze({
+    OPEN: 0,
+    CLOSED: 1,
+    V: 2
+});
+
+const CAMERA_X = 1;
+const CAMERA_Z = 1.3;
+
 export class Final_Project extends Scene {
     constructor() {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
@@ -122,41 +131,79 @@ export class Final_Project extends Scene {
         }
 
 // not sure if we need this since im not using it rn 
-        this.initial_camera_location = Mat4.look_at(vec3(0, 0, 20), vec3(0, 0, 0), vec3(0, 1, 0));
+        this.initial_camera_location = Mat4.look_at(vec3(0, 0, 20), vec3(0, .5, 0), vec3(0, 1, 0));
         this.skin_color = hex_color("#f5d990");
         this.hair_color = hex_color("#755e48");
         this.is_wearing_shirt = this.is_wearing_pants = true;
         this.hair_style = HairStyles.HORN;
         this.eye_style = EyeStyle.CRY;
-        this.mouth_open = false;
+        this.mouth_style = MouthStyle.CLOSED;
         this.cry = true;
+        this.attached = this.initial_camera_location;
+    }
+
+    move_camera_left() {
+        let desired = this.attached;
+        desired = desired.times(Mat4.translation(CAMERA_X,0,-CAMERA_Z));
+        this.attached = desired;
+    }
+
+    move_camera_right() {
+        let desired = this.attached;
+        desired = desired.times(Mat4.translation(-CAMERA_X,0,CAMERA_Z));
+        this.attached = desired;
     }
 
     set_skin_color(col) {
         this.skin_color = hex_color(col);
     }
 
+    set_hair_color(col) {
+        this.hair_color = hex_color(col);
+    }
+
     set_hair(hs) {
         this.hair_style = hs;
-        switch (hs) {
-            case HairStyles.HORN:
-                this.hair_color = hex_color("#cc9e3b");
-                break;
-            case HairStyles.EDGY:
-                this.hair_color = hex_color("#231c38");
-                break;
-            case HairStyles.TAIL:
-                this.hair_color = hex_color("#eb8df0");
-                break;
-            case HairStyles.BOWL:
-            default:
-                this.hair_color = hex_color("#755e48");
-                
-        }
     }
 
 
     make_control_panel() {
+        this.key_triggered_button("Look Left [not working]", ["z"], () => {this.move_camera_left()});
+        this.key_triggered_button("Look Right [not working]", ["x"], () => {this.move_camera_right()});
+        this.new_line();
+        
+        this.key_triggered_button("Default", ["Hair"], () => {this.set_hair(HairStyles.HORN)});
+        this.key_triggered_button("Edgy", ["Hair"], () => {this.set_hair(HairStyles.EDGY)});
+        this.key_triggered_button("Ponytail", ["Hair"], () => {this.set_hair(HairStyles.TAIL)});
+        this.key_triggered_button("Bowl", ["Hair"], () => {this.set_hair(HairStyles.BOWL)});
+        this.new_line();
+
+        this.key_triggered_button("Brown", ["Hair"], () => {this.set_hair_color("#755e48")});
+        this.key_triggered_button("Banana", ["Hair"], () => {this.set_hair_color("#cc9e3b")});
+        this.key_triggered_button("Dark", ["Hair"], () => {this.set_hair_color("#231c38")});
+        this.key_triggered_button("Pink", ["Hair"], () => {this.set_hair_color("#eb8df0")});
+        this.new_line();
+
+        this.key_triggered_button("Default", ["Skin"], () => {this.set_skin_color("#f5d990")});
+        this.key_triggered_button("Burnt", ["Skin"], () => {this.set_skin_color("#ffb885")});
+        this.key_triggered_button("Brown", ["Skin"], () => {this.set_skin_color("#5e302a")});
+        this.key_triggered_button("Blue", ["Skin"], () => {this.set_skin_color("#3d3d8f")});
+        this.new_line();
+        this.key_triggered_button("Normal", ["Eye"], () => {this.eye_style = EyeStyle.OPEN; this.cry = false;});
+        this.key_triggered_button("Cry", ["Eye"], () => {this.eye_style = EyeStyle.CRY; this.cry = true;});
+        this.key_triggered_button("Anime", ["Eye"], () => {this.eye_style = EyeStyle.ANIME; this.cry = false;});
+        this.new_line();
+        this.key_triggered_button(":|", ["Mouth"], () => {this.mouth_style = MouthStyle.CLOSED});
+        this.key_triggered_button(":>", ["Mouth"], () => {this.mouth_style = MouthStyle.V});
+        this.key_triggered_button(":o", ["Mouth"], () => {this.mouth_style = MouthStyle.OPEN});
+        this.new_line();
+        this.key_triggered_button("Is it wearing a shirt?", ["?"], () => {
+                this.is_wearing_shirt ^= 1;
+            });
+        this.key_triggered_button("Is it wearing pants?", ["?"], () => {
+                this.is_wearing_pants ^= 1;
+            });
+
         this.key_triggered_button("Reset Clothing", ["Control", "0"], () => {
             this.lower_clothing = "";
             this.upper_clothing = "";
@@ -179,28 +226,6 @@ export class Final_Project extends Scene {
             this.upper_clothing = "long_sleeve";
         });
         this.new_line();
-        
-        // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-
-    this.key_triggered_button("Default", ["Hair"], () => {this.set_hair(HairStyles.HORN)});
-    this.key_triggered_button("Edgy", ["Hair"], () => {this.set_hair(HairStyles.EDGY)});
-    this.key_triggered_button("Ponytail", ["Hair"], () => {this.set_hair(HairStyles.TAIL)});
-    this.key_triggered_button("Bowl", ["Hair"], () => {this.set_hair(HairStyles.BOWL)});
-
-    this.key_triggered_button("Default", ["Skin"], () => {this.set_skin_color("#f5d990")});
-    this.key_triggered_button("Sunburnt", ["Skin"], () => {this.set_skin_color("#ffb885")});
-    this.key_triggered_button("Banana", ["Skin"], () => {this.set_skin_color("#edea47")});
-    this.new_line();
-    this.key_triggered_button("Normal", ["Eye"], () => {this.eye_style = EyeStyle.OPEN; this.cry = false;});
-    this.key_triggered_button("Cry", ["Eye"], () => {this.eye_style = EyeStyle.CRY; this.cry = true;});
-    this.key_triggered_button("Anime", ["Eye"], () => {this.eye_style = EyeStyle.ANIME; this.cry = false;});
-    this.new_line();
-    this.key_triggered_button("Is it wearing a shirt?", ["?"], () => {
-            this.is_wearing_shirt ^= 1;
-        });
-    this.key_triggered_button("Is it wearing pants?", ["?"], () => {
-            this.is_wearing_pants ^= 1;
-        });
 
     }
 
@@ -378,13 +403,13 @@ export class Final_Project extends Scene {
         if (eye_state == EyeStyle.OPEN || eye_state == EyeStyle.CRY) {
         this.shapes.t2.draw(context, program_state, 
             model_transform.times(Mat4.translation(-.5*head_radius+.3,-head_radius+1.5,-.26))
-                .times(Mat4.rotation(.2,1,0,0))
+                .times(Mat4.rotation(.3,1,0,0))
                 .times(Mat4.rotation(-.3,0,1,0))
                 .times(Mat4.scale(.45,.45,1))
                 ,eye_material);
         this.shapes.t2.draw(context, program_state, 
             model_transform.times(Mat4.translation(.5*head_radius-.3,-head_radius+1.5,-.26))
-                .times(Mat4.rotation(.2,1,0,0))
+                .times(Mat4.rotation(.3,1,0,0))
                 .times(Mat4.rotation(.3,0,1,0))
                 .times(Mat4.scale(.45,.45,1))
                 ,eye_material);
@@ -493,7 +518,21 @@ export class Final_Project extends Scene {
        
         
         //mouth
-        if (this.mouth_open) {
+        if (this.mouth_style == MouthStyle.V) {
+            this.shapes.cube.draw(context, program_state, 
+                model_transform.times(Mat4.translation(.08,-1.5,-.25))
+                    .times(Mat4.rotation(Math.PI/10,1,0,0))
+                    .times(Mat4.rotation(Math.PI/4,0,0,1))
+                    .times(Mat4.scale(.16,.05,.0001))
+                , eye_material);   
+            this.shapes.cube.draw(context, program_state, 
+                model_transform.times(Mat4.translation(-.08,-1.5,-.25))
+                    .times(Mat4.rotation(Math.PI/10,1,0,0))
+                    .times(Mat4.rotation(-Math.PI/4,0,0,1))
+                    .times(Mat4.scale(.16,.05,.0001))
+                , eye_material);          
+        }
+        else if (this.mouth_style == MouthStyle.OPEN) {
             this.shapes.s.draw(context, program_state, 
                 model_transform.times(Mat4.translation(0,-1.5,-.3))
                     .times(Mat4.scale(.28,.15,.1))
@@ -503,7 +542,7 @@ export class Final_Project extends Scene {
                     .times(Mat4.scale(.3,.18,.1))
                     ,eye_material);            
         }
-        else {
+        else { // closed
         this.shapes.cube.draw(context, program_state, 
             model_transform.times(Mat4.translation(0,-1.5,-.25))
                 .times(Mat4.scale(.2,.05,.0001))
@@ -550,8 +589,16 @@ export class Final_Project extends Scene {
         if (!context.scratchpad.controls) {
             this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
             // Define the global camera and projection matrices, which are stored in program_state.
-            program_state.set_camera(Mat4.translation(0, 0, -30));
+            program_state.set_camera(Mat4.translation(0, -1, -18));
         }
+
+//         let x = -1;
+//         let z = 1.3;
+//         let desired = this.attached;
+//         desired = desired.times(Mat4.translation(x,0,z));
+//         this.attached = desired;
+        //desired = desired.map((x,i) => Vector.from(program_state.camera_inverse[i]).mix(x, .1));
+        //program_state.set_camera(desired);
 
     
         const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
