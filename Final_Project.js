@@ -172,16 +172,6 @@ export class Final_Project extends Scene {
         let eye_material = this.materials.eye;
         let eye_white = this.materials.eye.override({color:hex_color("#ffffff")});
         let tear = this.materials.eye.override({color:hex_color("#80b7ff")});
-//         this.shapes.hair.draw(context, program_state, 
-//             model_transform.times(Mat4.translation(0,.9,0))
-//             .times(Mat4.rotation(0,0,0,1))
-//             .times(Mat4.scale(.7,.7,.5))
-//             , hair_material);
-//          this.shapes.hair_v.draw(context, program_state, 
-//             model_transform.times(Mat4.translation(0,-.1,-.15))
-//             .times(Mat4.rotation(.1,1,0,0))
-//             .times(Mat4.scale(.7,.4,.6))
-//             , hair_material);
 
         this.shapes.t.draw(context, program_state, 
             model_transform.times(Mat4.translation(0,.5*head_radius,-head_radius))
@@ -200,12 +190,11 @@ export class Final_Project extends Scene {
         // back of head
         this.shapes.s.draw(context, program_state, 
             model_transform.times(Mat4.translation(0,.1,-head_radius-.3))
-                .times(Mat4.scale(head_radius,head_radius+.1,head_radius))
+                .times(Mat4.scale(head_radius,head_radius+.09,head_radius))
                 ,hair_material);
         //bangs
         this.shapes.ct.draw(context, program_state, 
             model_transform.times(Mat4.translation(0,.7,.2))
-            //.times(Mat4.rotation(-Math.PI/2,1,0,0))
                 .times(Mat4.scale(1,1,.3))
                 ,hair_material);
         this.shapes.ct.draw(context, program_state, 
@@ -375,9 +364,9 @@ export class Final_Project extends Scene {
         let ident = Mat4.identity();
         let body_transform = Mat4.identity().times(Mat4.rotation(-Math.PI/2,1,0,0));
         let head_transform = Mat4.identity();
-        //let head_transform = Mat4.identity().times(Mat4.rotation(-Math.PI/2,1,0,0));
         let head_radius = 2.3;
         let arm_angle = Math.sin(2*t)/2;
+        let head_angle = Math.sin(2*t)/16;
         let r_arm_transform = body_transform
                             .times(Mat4.translation(1.9,0,0))
                             .times(Mat4.translation(-1.25,0,1.5))
@@ -395,14 +384,16 @@ export class Final_Project extends Scene {
         // (side, up, depth)
         this.shapes.plane.draw(context, program_state, ident.times(Mat4.translation(0,-5,0)
             .times(Mat4.scale(100,.001,100))), this.materials.floor);
-            
-        let neck_transform = ident.times(Mat4.translation(0,2,0))
-                         .times(Mat4.scale(.35,.4,.4));
-        this.shapes.cc.draw(context, program_state, neck_transform, skin_material);
 
-        let face_transform = ident.times(Mat4.translation(0,4.3,head_radius));
+        let face_transform = ident
+            .times(Mat4.rotation(-head_angle,1,0,0))
+            .times(Mat4.translation(0,4.3,head_radius));
         this.draw_face(context, program_state, face_transform, t, skin_material, head_radius);
 
+        let neck_transform = face_transform.times(Mat4.translation(0,2-4.3,-head_radius))
+             .times(Mat4.scale(.35,.4,.4));
+        this.shapes.cc.draw(context, program_state, neck_transform, skin_material);
+        
         let l_ear_transform = face_transform.times(Mat4.translation(head_radius-.1,2*head_radius-.9-4.3,-head_radius))
                          .times(Mat4.scale(.35,.4,.4))
                          .times(Mat4.rotation(-Math.PI/8,0,0,1))
@@ -413,9 +404,6 @@ export class Final_Project extends Scene {
                          .times(Mat4.rotation(Math.PI/8,0,0,1))
                          .times(Mat4.rotation(Math.PI/2,0,1,0));
         this.shapes.cc.draw(context, program_state, r_ear_transform, skin_material);
-
-//         head_transform = head_transform.times(Mat4.translation(0,4.35,0))
-//                          .times(Mat4.scale(head_radius,head_radius-.01,head_radius));
 
         head_transform = face_transform.times(Mat4.translation(0,.05,-head_radius))
                          .times(Mat4.scale(head_radius,head_radius-.01,head_radius));
