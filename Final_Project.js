@@ -62,6 +62,20 @@ class Hair_V_Shape extends Shape {
     }
 }
 
+const HairStyles = Object.freeze({
+    HORN: 0,
+    EDGY: 1,
+    TAIL: 2,
+    BOWL: 3
+});
+
+const EyeStyle = Object.freeze({
+    OPEN: 0,
+    CLOSED: 1,
+    ANIME: 2,
+    CRY: 3
+});
+
 export class Final_Project extends Scene {
     constructor() {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
@@ -85,6 +99,7 @@ export class Final_Project extends Scene {
                square: new defs.Square(),
                hair: new Hair_Test(),
                hair_v: new Hair_V_Shape(),
+               cube: new defs.Cube(),
 
         };
 
@@ -103,26 +118,39 @@ export class Final_Project extends Scene {
                 hair2: new Material(new defs.Phong_Shader(),
                     {ambient: .5, diffusivity: .5, specularity: .7, color: hex_color("#231c38")}),
                 eye: new Material(new defs.Phong_Shader(),
-                    {ambient: .5, diffusivity: .5, specularity: .7, color: hex_color("#291515")}),
+                    {ambient: .5, diffusivity: 0, specularity: 0, color: hex_color("#291515")}),
         }
 
 // not sure if we need this since im not using it rn 
         this.initial_camera_location = Mat4.look_at(vec3(0, 0, 20), vec3(0, 0, 0), vec3(0, 1, 0));
         this.skin_color = hex_color("#f5d990");
         this.hair_color = hex_color("#755e48");
-        this.is_wearing_shirt = this.is_wearing_pants = this.eye_open = true;
+        this.is_wearing_shirt = this.is_wearing_pants = true;
+        this.hair_style = HairStyles.HORN;
+        this.eye_style = EyeStyle.OPEN;
     }
 
-    set_mafu_skin_color() {
-        this.skin_color = hex_color("#f5d990");
+    set_skin_color(col) {
+        this.skin_color = hex_color(col);
     }
 
-    set_peach_skin_color() {
-         this.skin_color = hex_color("#ffb885");
-    }
-
-    set_yellow_skin_color() {
-         this.skin_color = hex_color("#edea47");
+    set_hair(hs) {
+        this.hair_style = hs;
+        switch (hs) {
+            case HairStyles.HORN:
+                this.hair_color = hex_color("#cc9e3b");
+                break;
+            case HairStyles.EDGY:
+                this.hair_color = hex_color("#231c38");
+                break;
+            case HairStyles.TAIL:
+                this.hair_color = hex_color("#eb8df0");
+                break;
+            case HairStyles.BOWL:
+            default:
+                this.hair_color = hex_color("#755e48");
+                
+        }
     }
 
 
@@ -152,22 +180,29 @@ export class Final_Project extends Scene {
         
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
 
-    this.key_triggered_button("Change skin to default", ["d"], this.set_mafu_skin_color);
-    this.key_triggered_button("Change skin to sunburnt", ["h"], this.set_peach_skin_color);
-    this.key_triggered_button("Change skin to banana", ["b"], this.set_yellow_skin_color);
-    this.key_triggered_button("Toggle eye?", ["p"], () => {
-            this.eye_open ^= 1;
-        });
-    this.key_triggered_button("Is it wearing a shirt?", ["s"], () => {
+    this.key_triggered_button("Default", ["Hair"], () => {this.set_hair(HairStyles.HORN)});
+    this.key_triggered_button("Edgy", ["Hair"], () => {this.set_hair(HairStyles.EDGY)});
+    this.key_triggered_button("Ponytail", ["Hair"], () => {this.set_hair(HairStyles.TAIL)});
+    this.key_triggered_button("Bowl", ["Hair"], () => {this.set_hair(HairStyles.BOWL)});
+
+    this.key_triggered_button("Default", ["Skin"], () => {this.set_skin_color("#f5d990")});
+    this.key_triggered_button("Sunburnt", ["Skin"], () => {this.set_skin_color("#ffb885")});
+    this.key_triggered_button("Banana", ["Skin"], () => {this.set_skin_color("#edea47")});
+    this.new_line();
+    this.key_triggered_button("Normal", ["Eye"], () => {this.eye_style = EyeStyle.OPEN});
+    this.key_triggered_button("Cry", ["Eye"], () => {this.eye_style = EyeStyle.CRY});
+    this.key_triggered_button("Anime", ["Eye"], () => {this.eye_style = EyeStyle.ANIME});
+    this.new_line();
+    this.key_triggered_button("Is it wearing a shirt?", ["?"], () => {
             this.is_wearing_shirt ^= 1;
         });
-    this.key_triggered_button("Is it wearing pants?", ["p"], () => {
+    this.key_triggered_button("Is it wearing pants?", ["?"], () => {
             this.is_wearing_pants ^= 1;
         });
 
     }
 
-    draw_face(context, program_state, model_transform, t, skin_material, head_radius) {
+    draw_face(context, program_state, model_transform, t, skin_material, head_radius, tail_angle) {
         let hair_material = this.materials.hair.override({color:this.hair_color});
         let eye_material = this.materials.eye;
         let eye_white = this.materials.eye.override({color:hex_color("#ffffff")});
@@ -192,16 +227,6 @@ export class Final_Project extends Scene {
             model_transform.times(Mat4.translation(0,.1,-head_radius-.3))
                 .times(Mat4.scale(head_radius,head_radius+.09,head_radius))
                 ,hair_material);
-        //bangs
-        this.shapes.ct.draw(context, program_state, 
-            model_transform.times(Mat4.translation(0,.7,.2))
-                .times(Mat4.scale(1,1,.3))
-                ,hair_material);
-        this.shapes.ct.draw(context, program_state, 
-            model_transform.times(Mat4.translation(0,.5,.2))
-              .times(Mat4.rotation(-Math.PI/25,1,0,0))
-                .times(Mat4.scale(1.2,1.6,.3))
-                ,hair_material);
         //sideburn
         this.shapes.ct.draw(context, program_state, 
             model_transform.times(Mat4.translation(-2.35,.4,-1.8))
@@ -213,26 +238,131 @@ export class Final_Project extends Scene {
                 .times(Mat4.rotation(Math.PI/2,0,1,0))
                 .times(Mat4.scale(1,1.6,.3))
                 ,hair_material);
-        //middle-side bangs
-        this.shapes.ct.draw(context, program_state, 
-            model_transform.times(Mat4.translation(1.6,.4,-.6))
-                .times(Mat4.rotation(Math.PI/20,0,0,1))
-                .times(Mat4.rotation(Math.PI/4,0,1,0))
-                .times(Mat4.scale(1.5,1.8,.3))
-                ,hair_material);
-        this.shapes.ct.draw(context, program_state, 
-            model_transform.times(Mat4.translation(-1.6,.4,-.6))
-                .times(Mat4.rotation(-Math.PI/20,0,0,1))
-                .times(Mat4.rotation(-Math.PI/4,0,1,0))
-                .times(Mat4.scale(1.5,1.8,.3))
-                ,hair_material);
-        //horn
-        this.shapes.rcc.draw(context, program_state, 
-            model_transform.times(Mat4.translation(0,.5*head_radius+.5,head_radius-1.7))
-                .times(Mat4.rotation(-Math.PI/8,1,0,0))
-                .times(Mat4.scale(.8,.8,.7))
-                
-                ,hair_material);
+
+
+        if (this.hair_style == HairStyles.HORN) {
+            //bangs
+            this.shapes.ct.draw(context, program_state, 
+                model_transform.times(Mat4.translation(0,.7,.2))
+                    .times(Mat4.scale(1,1,.3))
+                    ,hair_material);
+            this.shapes.ct.draw(context, program_state, 
+                model_transform.times(Mat4.translation(0,.5,.2))
+                  .times(Mat4.rotation(-Math.PI/25,1,0,0))
+                    .times(Mat4.scale(1.2,1.6,.3))
+                    ,hair_material);
+            //middle-side bangs
+            this.shapes.ct.draw(context, program_state, 
+                model_transform.times(Mat4.translation(1.6,.4,-.6))
+                    .times(Mat4.rotation(Math.PI/20,0,0,1))
+                    .times(Mat4.rotation(Math.PI/4,0,1,0))
+                    .times(Mat4.scale(1.5,1.8,.3))
+                    ,hair_material);
+            this.shapes.ct.draw(context, program_state, 
+                model_transform.times(Mat4.translation(-1.6,.4,-.6))
+                    .times(Mat4.rotation(-Math.PI/20,0,0,1))
+                    .times(Mat4.rotation(-Math.PI/4,0,1,0))
+                    .times(Mat4.scale(1.5,1.8,.3))
+                    ,hair_material);
+            //horn
+            this.shapes.rcc.draw(context, program_state, 
+                model_transform.times(Mat4.translation(0,.5*head_radius+.5,head_radius-1.7))
+                    .times(Mat4.rotation(-Math.PI/8,1,0,0))
+                    .times(Mat4.scale(.8,.8,.7))   
+                    ,hair_material);
+        }
+        else if (this.hair_style == HairStyles.EDGY) {
+            //bangs
+            this.shapes.ct.draw(context, program_state, 
+                model_transform.times(Mat4.translation(0,.7,.2))
+                    .times(Mat4.scale(1,1,.3))
+                    ,hair_material);
+            this.shapes.ct.draw(context, program_state, 
+                model_transform.times(Mat4.translation(0,.5,.2))
+                    .times(Mat4.rotation(-Math.PI/25,1,0,0))
+                    .times(Mat4.scale(1.2,1.8,.3))
+                    .times(Mat4.rotation(Math.PI/10,0,0,1))
+                    ,hair_material);                
+            //side bands
+            this.shapes.ct.draw(context, program_state, 
+                model_transform.times(Mat4.translation(1.6,.2,-.65))
+                    .times(Mat4.rotation(Math.PI/17,0,0,1))
+                    .times(Mat4.rotation(Math.PI/4,0,1,0))
+                    .times(Mat4.scale(1.8,1.85,.3))
+                    ,hair_material); // R
+            this.shapes.ct.draw(context, program_state, 
+                model_transform.times(Mat4.translation(-1.8,.4,-.6))
+                    .times(Mat4.rotation(-Math.PI/20,0,0,1))
+                    .times(Mat4.rotation(-Math.PI/4,0,1,0))
+                    .times(Mat4.scale(.8,1.8,.3))
+                    ,hair_material);                 
+        }
+        else if (this.hair_style == HairStyles.TAIL) {
+            // middle bangs
+            this.shapes.ct.draw(context, program_state, 
+                model_transform.times(Mat4.translation(1.6,.4,-.6))
+                    .times(Mat4.rotation(Math.PI/20,0,0,1))
+                    .times(Mat4.rotation(Math.PI/4,0,1,0))
+                    .times(Mat4.scale(1.5,1.8,.3))
+                    ,hair_material);
+            this.shapes.ct.draw(context, program_state, 
+                model_transform.times(Mat4.translation(-1.6,.4,-.6))
+                    .times(Mat4.rotation(-Math.PI/20,0,0,1))
+                    .times(Mat4.rotation(-Math.PI/4,0,1,0))
+                    .times(Mat4.scale(1.5,1.8,.3))
+                    ,hair_material);    
+
+            let hairband = hair_material.override({color:hex_color("#246b52")});
+            let hair_ornament = hair_material.override({color:hex_color("#a32933")});
+            //LHS tail
+            this.shapes.cc.draw(context, program_state,
+            model_transform.times(Mat4.translation(head_radius,1.5,-.5*head_radius-.5))
+                    .times(Mat4.rotation(Math.PI/16,0,0,1))
+                    .times(Mat4.rotation(Math.PI/2,0,1,0))
+                    .times(Mat4.scale(.35,.35,.35))
+                , hairband);    
+            this.shapes.s.draw(context, program_state,
+            model_transform.times(Mat4.translation(head_radius,1.9,-.5*head_radius-.3))
+                    .times(Mat4.rotation(Math.PI/16,0,0,1))
+                    .times(Mat4.rotation(Math.PI/2,0,1,0))
+                    .times(Mat4.scale(.25,.25,.25))
+                , hair_ornament);  
+            this.shapes.rcc.draw(context, program_state,
+            model_transform
+                     .times(Mat4.translation(head_radius-.1,1.5,-.5*head_radius-.5))
+                     .times(Mat4.rotation(-Math.PI/2,0,1,0))
+                     .times(Mat4.translation(0,0,-.2))
+                      .times(Mat4.rotation(-tail_angle,0,1,0))
+                    .times(Mat4.translation(0,0,-.2))
+                     .times(Mat4.scale(.5,.5,.8))
+                , hair_material);                    
+
+            //RHS tail
+            this.shapes.cc.draw(context, program_state,
+            model_transform.times(Mat4.translation(-head_radius,1.5,-.5*head_radius-.5))
+                    .times(Mat4.rotation(Math.PI/16,0,0,1))
+                    .times(Mat4.rotation(Math.PI/2,0,1,0))
+                    .times(Mat4.scale(.35,.35,.35))
+                , hairband);    
+            this.shapes.s.draw(context, program_state,
+            model_transform.times(Mat4.translation(-head_radius,1.9,-.5*head_radius-.3))
+                    .times(Mat4.rotation(Math.PI/16,0,0,1))
+                    .times(Mat4.rotation(Math.PI/2,0,1,0))
+                    .times(Mat4.scale(.25,.25,.25))
+                , hair_ornament);  
+            this.shapes.rcc.draw(context, program_state,
+            model_transform
+                     .times(Mat4.translation(-head_radius+.1,1.5,-.5*head_radius-.5))
+                     .times(Mat4.rotation(Math.PI/2,0,1,0))
+                     .times(Mat4.translation(0,0,-.2))
+                      .times(Mat4.rotation(tail_angle,0,1,0))
+                    .times(Mat4.translation(0,0,-.2))
+                     .times(Mat4.scale(.5,.5,.8))
+                , hair_material);                    
+        }
+        else {
+
+        }
         
         //face/chin
         this.shapes.t.draw(context, program_state, 
@@ -243,7 +373,7 @@ export class Final_Project extends Scene {
                 ,skin_material);
 
         //eye
-        if (this.eye_open) {
+        if (this.eye_style == EyeStyle.OPEN) {
         this.shapes.t2.draw(context, program_state, 
             model_transform.times(Mat4.translation(-.5*head_radius+.3,-head_radius+1.5,-.26))
                 .times(Mat4.rotation(.2,1,0,0))
@@ -282,25 +412,82 @@ export class Final_Project extends Scene {
                 .times(Mat4.rotation(.3,0,1,0))
                 .times(Mat4.scale(.12,.15,.1))
                 ,tear);
+        }
+        else if (this.eye_style == EyeStyle.ANIME) {
+        this.shapes.t2.draw(context, program_state, //L eye
+            model_transform.times(Mat4.translation(-.5*head_radius+.3,-head_radius+1.5,-.234))
+                .times(Mat4.rotation(.2,1,0,0))
+                .times(Mat4.rotation(-.3,0,1,0))
+                .times(Mat4.scale(.55,.55,1))
+                ,eye_white);
+        this.shapes.s.draw(context, program_state, 
+            model_transform.times(Mat4.translation(-.5*head_radius+.3,-head_radius+1.5,-.26))
+                .times(Mat4.rotation(.2,1,0,0))
+                .times(Mat4.rotation(-.3,0,1,0))
+                .times(Mat4.scale(.38,.38,.05))
+                ,eye_material);
+        this.shapes.s.draw(context, program_state, // s
+            model_transform.times(Mat4.translation(-.5*head_radius+.18,-head_radius+1.35,-.4))
+                .times(Mat4.rotation(-.8,0,0,1))
+                .times(Mat4.rotation(.2,1,0,0))
+                .times(Mat4.rotation(-.3,0,1,0))
+                .times(Mat4.scale(.2,.2,.1))
+                ,eye_white);
+        this.shapes.s.draw(context, program_state, 
+            model_transform.times(Mat4.translation(-.5*head_radius+.42,-head_radius+1.6,-.2))
+                .times(Mat4.rotation(-.8,0,0,1))
+                .times(Mat4.rotation(.2,1,0,0))
+                .times(Mat4.rotation(-.3,0,1,0))
+                .times(Mat4.scale(.2,.2,.1))
+                ,eye_white);
+                
+        this.shapes.t2.draw(context, program_state, //R eye
+            model_transform.times(Mat4.translation(.5*head_radius-.3,-head_radius+1.5,-.234))
+                .times(Mat4.rotation(.2,1,0,0))
+                .times(Mat4.rotation(.3,0,1,0))
+                .times(Mat4.scale(.55,.55,1))
+                ,eye_white);
+        this.shapes.s.draw(context, program_state, 
+            model_transform.times(Mat4.translation(.5*head_radius-.3,-head_radius+1.5,-.26))
+                .times(Mat4.rotation(.2,1,0,0))
+                .times(Mat4.rotation(.3,0,1,0))
+                .times(Mat4.scale(.38,.38,.05))
+                ,eye_material);
+        this.shapes.s.draw(context, program_state, 
+            model_transform.times(Mat4.translation(.5*head_radius-.5,-head_radius+1.35,-.3))
+                .times(Mat4.rotation(.8,0,0,1))
+                .times(Mat4.rotation(.2,1,0,0))
+                .times(Mat4.rotation(.3,0,1,0))
+                .times(Mat4.scale(.2,.2,.1))
+                ,eye_white);
+        this.shapes.s.draw(context, program_state, 
+            model_transform.times(Mat4.translation(.5*head_radius-.16,-head_radius+1.6,-.3))
+                .times(Mat4.rotation(-.1,0,0,1))
+                .times(Mat4.rotation(.2,1,0,0))
+                .times(Mat4.rotation(.3,0,1,0))
+                .times(Mat4.scale(.2,.2,.1))
+                ,eye_white);
 
         }
         else {
-                   //eyebrows
-        this.shapes.square.draw(context, program_state, 
-            model_transform.times(Mat4.translation(-.85,-.9,0))
-                .times(Mat4.scale(.23,.1,1))
+        //closed eye
+        this.shapes.cube.draw(context, program_state, 
+            model_transform.times(Mat4.translation(-.85,-.9,-.3))
+                .times(Mat4.scale(.23,.1,.001))
             , eye_material);
 
-        this.shapes.square.draw(context, program_state, 
-            model_transform.times(Mat4.translation(.85,-.9,0))
-                .times(Mat4.scale(.23,.1,1))
+        this.shapes.cube.draw(context, program_state, 
+            model_transform.times(Mat4.translation(.85,-.9,-.3))
+                .times(Mat4.scale(.23,.1,.001))
             , eye_material);
+
         }
+       
         
         //mouth
-        this.shapes.square.draw(context, program_state, 
+        this.shapes.cube.draw(context, program_state, 
             model_transform.times(Mat4.translation(0,-1.5,-.25))
-                .times(Mat4.scale(.2,.05,1))
+                .times(Mat4.scale(.2,.05,.0001))
             , eye_material);
     }
 
@@ -367,6 +554,7 @@ export class Final_Project extends Scene {
         let head_radius = 2.3;
         let arm_angle = Math.sin(2*t)/2;
         let head_angle = Math.sin(2*t)/16;
+        //let head_angle = 0;
         let r_arm_transform = body_transform
                             .times(Mat4.translation(1.9,0,0))
                             .times(Mat4.translation(-1.25,0,1.5))
@@ -388,12 +576,12 @@ export class Final_Project extends Scene {
         let face_transform = ident
             .times(Mat4.rotation(-head_angle,1,0,0))
             .times(Mat4.translation(0,4.3,head_radius));
-        this.draw_face(context, program_state, face_transform, t, skin_material, head_radius);
+        this.draw_face(context, program_state, face_transform, t, skin_material, head_radius, arm_angle/2);
 
         let neck_transform = face_transform.times(Mat4.translation(0,2-4.3,-head_radius))
              .times(Mat4.scale(.35,.4,.4));
         this.shapes.cc.draw(context, program_state, neck_transform, skin_material);
-        
+
         let l_ear_transform = face_transform.times(Mat4.translation(head_radius-.1,2*head_radius-.9-4.3,-head_radius))
                          .times(Mat4.scale(.35,.4,.4))
                          .times(Mat4.rotation(-Math.PI/8,0,0,1))
