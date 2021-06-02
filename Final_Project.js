@@ -245,7 +245,7 @@ export class Final_Project extends Scene {
                 
                 ,hair_material);
         
-        //face 
+        //face/chin
         this.shapes.t.draw(context, program_state, 
             model_transform.times(Mat4.translation(0,-head_radius+1.4,-head_radius+.7))
                 .times(Mat4.rotation(-Math.PI/25,1,0,0))
@@ -372,8 +372,10 @@ export class Final_Project extends Scene {
         //program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 10**sun_scaler)];
         let skin_material = this.materials.test.override({color:this.skin_color});
         
+        let ident = Mat4.identity();
         let body_transform = Mat4.identity().times(Mat4.rotation(-Math.PI/2,1,0,0));
         let head_transform = Mat4.identity();
+        //let head_transform = Mat4.identity().times(Mat4.rotation(-Math.PI/2,1,0,0));
         let head_radius = 2.3;
         let arm_angle = Math.sin(2*t)/2;
         let r_arm_transform = body_transform
@@ -391,31 +393,32 @@ export class Final_Project extends Scene {
 
         // head
         // (side, up, depth)
-        this.shapes.plane.draw(context, program_state, head_transform.times(Mat4.translation(0,-5,0)
+        this.shapes.plane.draw(context, program_state, ident.times(Mat4.translation(0,-5,0)
             .times(Mat4.scale(100,.001,100))), this.materials.floor);
             
-        let neck_transform = head_transform.times(Mat4.translation(0,2,0))
+        let neck_transform = ident.times(Mat4.translation(0,2,0))
                          .times(Mat4.scale(.35,.4,.4));
         this.shapes.cc.draw(context, program_state, neck_transform, skin_material);
-        let l_ear_transform = head_transform.times(Mat4.translation(head_radius-.1,2*head_radius-.9,0))
+
+        let face_transform = ident.times(Mat4.translation(0,4.3,head_radius));
+        this.draw_face(context, program_state, face_transform, t, skin_material, head_radius);
+
+        let l_ear_transform = face_transform.times(Mat4.translation(head_radius-.1,2*head_radius-.9-4.3,-head_radius))
                          .times(Mat4.scale(.35,.4,.4))
                          .times(Mat4.rotation(-Math.PI/8,0,0,1))
                          .times(Mat4.rotation(Math.PI/2,0,1,0));
         this.shapes.cc.draw(context, program_state, l_ear_transform, skin_material);
-        let r_ear_transform = head_transform.times(Mat4.translation(-head_radius+.1,2*head_radius-.9,0))
+        let r_ear_transform = face_transform.times(Mat4.translation(-head_radius+.1,2*head_radius-.9-4.3,-head_radius))
                          .times(Mat4.scale(.35,.4,.4))
                          .times(Mat4.rotation(Math.PI/8,0,0,1))
                          .times(Mat4.rotation(Math.PI/2,0,1,0));
         this.shapes.cc.draw(context, program_state, r_ear_transform, skin_material);
 
+//         head_transform = head_transform.times(Mat4.translation(0,4.35,0))
+//                          .times(Mat4.scale(head_radius,head_radius-.01,head_radius));
 
-        let face_transform = Mat4.identity().times(Mat4.translation(0,4.3,head_radius));
-        this.draw_face(context, program_state, face_transform, t, skin_material, head_radius);
-
-
-
-        head_transform = head_transform.times(Mat4.translation(0,4.35,0))
-                         .times(Mat4.scale(head_radius,head_radius,head_radius));
+        head_transform = face_transform.times(Mat4.translation(0,.05,-head_radius))
+                         .times(Mat4.scale(head_radius,head_radius-.01,head_radius));
         this.shapes.s.draw(context, program_state, head_transform, skin_material);
         
 
