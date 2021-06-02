@@ -80,8 +80,11 @@ export class Final_Project extends Scene {
     constructor() {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
         super();
-        
+
+        this.x_coord = this.y_coord = 0;
+        this.direction_angle = 0;
         this.lower_clothing = this.upper_clothing = this.shoes = "";
+
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
                s: new defs.Subdivision_Sphere(4),
@@ -154,9 +157,29 @@ export class Final_Project extends Scene {
                 
         }
     }
-
+    
+    set_direction_angle(new_angle) {
+        let difference = this.direction_angle - new_angle;
+        //console.log("DIFFERENCE= " + difference);
+        if(difference === 90 || difference === -90)
+            return new_angle + difference/2;
+        else if(difference === 270 || difference === -270)
+            return 315;
+        else if(difference === 0)
+            return this.direction_angle;
+        else 
+            return new_angle; 
+    }
 
     make_control_panel() {
+        this.key_triggered_button("Move Backwards", ["W"], () => 
+            {this.y_coord = this.y_coord - 0.2; this.direction_angle = this.set_direction_angle(180); }); //console.log("GOING THIS DIRECTION: " + this.direction_angle); console.log("---");});
+        this.key_triggered_button("Move Left",      ["A"], () => 
+            {this.x_coord = this.x_coord - 0.2; this.direction_angle = this.set_direction_angle(270); });  //console.log("GOING THIS DIRECTION: " + this.direction_angle); console.log("---");});
+        this.key_triggered_button("Move Forward",   ["S"], () => 
+            {this.y_coord = this.y_coord + 0.2; this.direction_angle = this.set_direction_angle(0); });  //console.log("GOING THIS DIRECTION: " + this.direction_angle); console.log("---");});
+        this.key_triggered_button("Move Right",     ["D"], () => 
+            {this.x_coord = this.x_coord + 0.2; this.direction_angle = this.set_direction_angle(90); });  //console.log("GOING THIS DIRECTION: " + this.direction_angle); console.log("---");});
         this.key_triggered_button("Reset Clothing", ["Control", "0"], () => {
             this.lower_clothing = "";
             this.upper_clothing = "";
@@ -512,7 +535,7 @@ export class Final_Project extends Scene {
 
     }
 
-
+    
     draw_leg(context, program_state, model_transform, t, skin_material, pant_material) {
         let feet = model_transform.times(Mat4.translation(0,0,-3.65)).times(Mat4.scale(0.5,0.5,0.5));
         model_transform = model_transform
@@ -542,6 +565,13 @@ export class Final_Project extends Scene {
         this.shapes.cc.draw(context, program_state, model_transform, shirt_material);
         this.shapes.s.draw(context, program_state, hand_transform, skin_material);
         return model_transform;
+    }
+    
+    move_character(model_transform, t) {
+        model_transform = model_transform
+            .times(Mat4.translation(this.x_coord, 0, this.y_coord))
+            .times(Mat4.rotation(this.direction_angle*Math.PI/180,0,1,0));
+        return model_transform
     }
 
     display(context, program_state) {
@@ -580,7 +610,8 @@ export class Final_Project extends Scene {
         let skin_material = this.materials.test.override({color:this.skin_color});
         
         let ident = Mat4.identity();
-        let body_transform = Mat4.identity().times(Mat4.rotation(-Math.PI/2,1,0,0));
+        let location_transform = this.move_character(Mat4.identity(), t);
+        let body_transform = location_transform.times(Mat4.rotation(-Math.PI/2,1,0,0));
         let head_transform = Mat4.identity();
         let head_radius = 2.3;
         let arm_angle = Math.sin(2*t)/2;
@@ -604,7 +635,7 @@ export class Final_Project extends Scene {
         this.shapes.plane.draw(context, program_state, ident.times(Mat4.translation(0,-5,0)
             .times(Mat4.scale(100,.001,100))), this.materials.floor);
 
-        let face_transform = ident
+        let face_transform = location_transform
             .times(Mat4.rotation(-head_angle,1,0,0))
             .times(Mat4.translation(0,4.3,head_radius));
         this.draw_face(context, program_state, face_transform, t, skin_material, head_radius, arm_angle/2, eye_state);
