@@ -1,7 +1,7 @@
 import {defs, tiny} from './examples/common.js';
 
 const {
-    Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
+    Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture,
 } = tiny;
 
 class Hair_Test extends Shape {
@@ -82,6 +82,13 @@ const MouthStyle = Object.freeze({
     V: 2
 });
 
+const Backgrounds = Object.freeze({
+    DAY: 0,
+    NIGHT: 1,
+    FUJI: 2,
+    APOCALYPSE: 3
+});
+
 const CAMERA_X = 1;
 const CAMERA_Z = 1.3;
 
@@ -107,30 +114,78 @@ export class Final_Project extends Scene {
                rcc: new defs.Rounded_Closed_Cone(15,15,[[0,1], [0,1]]),
                circle: new defs.Regular_2D_Polygon(1, 15),
                moon: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(1),
-               plane: new defs.Subdivision_Sphere(2),
+               plane: new defs.Cube(),
                square: new defs.Square(),
                hair: new Hair_Test(),
                hair_v: new Hair_V_Shape(),
                cube: new defs.Cube(),
+               ground: new defs.Cube(),
+               night: new defs.Cube(),
 
         };
+
+        this.shapes.ground.arrays.texture_coord.forEach(
+            (v,i,l) => l[i] = vec(12*v[0],12*v[1])
+        );
+
+        this.shapes.night.arrays.texture_coord.forEach(
+            (v,i,l) => l[i] = vec(3*v[0],3*v[1])
+        );
 
         // *** Materials
         this.materials = {
                 test: new Material(new defs.Phong_Shader(),
-                    {ambient: .5, diffusivity: .6, specularity: 1, color: hex_color("#edea47")}),
+                    {ambient: .7, diffusivity: .6, specularity: 1, color: hex_color("#edea47")}),
                 shirt: new Material(new defs.Phong_Shader(),
-                    {ambient: .5, diffusivity: .6, specularity: 1, color: hex_color("#faacac")}),
+                    {ambient: .7, diffusivity: .6, specularity: 1, color: hex_color("#faacac")}),
                 pants: new Material(new defs.Phong_Shader(),
-                    {ambient: .5, diffusivity: .6, specularity: 1, color: hex_color("#4794ed")}),
+                    {ambient: .7, diffusivity: .6, specularity: 1, color: hex_color("#4794ed")}),
                 floor: new Material(new defs.Phong_Shader(),
-                    {ambient: .5, diffusivity: .6, specularity: .1, color: hex_color("#e1e6e4")}),
+                    {ambient: .7, diffusivity: .6, specularity: .1, color: hex_color("#e1e6e4")}),
                 hair: new Material(new defs.Phong_Shader(),
-                    {ambient: .5, diffusivity: .5, specularity: .7, color: hex_color("#755e48")}),
-                hair2: new Material(new defs.Phong_Shader(),
-                    {ambient: .5, diffusivity: .5, specularity: .7, color: hex_color("#231c38")}),
+                    {ambient: .7, diffusivity: .5, specularity: .7, color: hex_color("#755e48")}),
                 eye: new Material(new defs.Phong_Shader(),
-                    {ambient: .5, diffusivity: 0, specularity: 0, color: hex_color("#291515")}),
+                    {ambient: .7, diffusivity: 0, specularity: 0, color: hex_color("#291515")}),
+                grass: new Material(new defs.Textured_Phong(), {
+                    color: hex_color("#000000"),
+                    ambient: 1, diffusivity: 0.1, specularity: 0.1,
+                    texture: new Texture("assets/grass-128.jpg")
+                }),
+                grass_night: new Material(new defs.Textured_Phong(), {
+                    color: hex_color("#000000"),
+                    ambient: .2, diffusivity: 0.1, specularity: 0.1,
+                    texture: new Texture("assets/grass-128.jpg")
+                }),
+                sky: new Material(new defs.Textured_Phong(), {
+                    color: hex_color("#000000"),
+                    ambient: 1, diffusivity: 0.1, specularity: 0.1,
+                    texture: new Texture("assets/sky-128.png")
+                }),
+                night: new Material(new defs.Textured_Phong(), {
+                    color: hex_color("#000000"),
+                    ambient: 1, diffusivity: 0.1, specularity: 0.1,
+                    texture: new Texture("assets/night-512.jpg")
+                }),
+                rock: new Material(new defs.Textured_Phong(), {
+                    color: hex_color("#000000"),
+                    ambient: 1, diffusivity: 0.1, specularity: 0.1,
+                    texture: new Texture("assets/rock2.jpg")
+                }),
+                mountain: new Material(new defs.Textured_Phong(), {
+                    color: hex_color("#000000"),
+                    ambient: 1, diffusivity: 0.1, specularity: 0.1,
+                    texture: new Texture("assets/mountain-512.jpg")
+                }),
+                rock2: new Material(new defs.Textured_Phong(), {
+                    color: hex_color("#000000"),
+                    ambient: .4, diffusivity: 0.1, specularity: 0.1,
+                    texture: new Texture("assets/rock3.jpg")
+                }),
+                hellscape: new Material(new defs.Textured_Phong(), {
+                    color: hex_color("#000000"),
+                    ambient: 1, diffusivity: 0.1, specularity: 0.1,
+                    texture: new Texture("assets/fire.jpg")
+                }),
         }
 
 // not sure if we need this since im not using it rn 
@@ -142,6 +197,8 @@ export class Final_Project extends Scene {
         this.eye_style = EyeStyle.CRY;
         this.mouth_style = MouthStyle.CLOSED;
         this.cry = true;
+        this.is_dark = false;
+        this.stage = Backgrounds.DAY;
         this.attached = this.initial_camera_location;
     }
 
@@ -183,6 +240,8 @@ export class Final_Project extends Scene {
     }
 
     make_control_panel() {
+        this.control_panel.innerHTML += "-------------------- Movement Controls --------------------";
+        this.new_line();
         this.key_triggered_button("Move Backwards", ["W"], () => 
             {this.y_coord = this.y_coord - 0.2; this.direction_angle = this.set_direction_angle(180); }); //console.log("GOING THIS DIRECTION: " + this.direction_angle); console.log("---");});
         this.key_triggered_button("Move Left",      ["A"], () => 
@@ -191,10 +250,16 @@ export class Final_Project extends Scene {
             {this.y_coord = this.y_coord + 0.2; this.direction_angle = this.set_direction_angle(0); });  //console.log("GOING THIS DIRECTION: " + this.direction_angle); console.log("---");});
         this.key_triggered_button("Move Right",     ["D"], () => 
             {this.x_coord = this.x_coord + 0.2; this.direction_angle = this.set_direction_angle(90); });  //console.log("GOING THIS DIRECTION: " + this.direction_angle); console.log("---");});
-        this.key_triggered_button("Look Left [not working]", ["z"], () => {this.move_camera_left()});
-        this.key_triggered_button("Look Right [not working]", ["x"], () => {this.move_camera_right()});
+//         this.key_triggered_button("Look Left [not working]", ["z"], () => {this.move_camera_left()});
+//         this.key_triggered_button("Look Right [not working]", ["x"], () => {this.move_camera_right()});
         this.new_line();
-        
+        this.live_string(box => {
+            box.textContent = "------------------- Customize Character -------------------"
+        });
+        //this.control_panel.innerHTML += "------------------- Customize Character -------------------";
+        //this.new_line();
+        //this.control_panel.innerHTML += "Face";
+        this.new_line();
         this.key_triggered_button("Default", ["Hair"], () => {this.set_hair(HairStyles.HORN)});
         this.key_triggered_button("Edgy", ["Hair"], () => {this.set_hair(HairStyles.EDGY)});
         this.key_triggered_button("Ponytail", ["Hair"], () => {this.set_hair(HairStyles.TAIL)});
@@ -219,6 +284,7 @@ export class Final_Project extends Scene {
         this.key_triggered_button(":|", ["Mouth"], () => {this.mouth_style = MouthStyle.CLOSED});
         this.key_triggered_button(":>", ["Mouth"], () => {this.mouth_style = MouthStyle.V});
         this.key_triggered_button(":o", ["Mouth"], () => {this.mouth_style = MouthStyle.OPEN});
+        //this.control_panel.innerHTML += "Body";
         this.new_line();
         this.key_triggered_button("Is it wearing a shirt?", ["?"], () => {
                 this.is_wearing_shirt ^= 1;
@@ -226,37 +292,227 @@ export class Final_Project extends Scene {
         this.key_triggered_button("Is it wearing pants?", ["?"], () => {
                 this.is_wearing_pants ^= 1;
             });
+        this.new_line();
+        //this.control_panel.innerHTML += "Backgrounds";
+        this.new_line();
+        this.key_triggered_button("Day", ["Stage"], () => {this.stage = Backgrounds.DAY; this.is_dark = false;});
+        this.key_triggered_button("Scenic", ["Stage"], () => {this.stage = Backgrounds.FUJI; this.is_dark = false;});
+        this.key_triggered_button("Night", ["Stage"], () => {this.stage = Backgrounds.NIGHT; this.is_dark = true;});
+        this.key_triggered_button("Apocalypse", ["Stage"], () => {this.stage = Backgrounds.APOCALYPSE; this.is_dark = true;});
+        this.new_line();
 
         this.key_triggered_button("Reset Clothing", ["Control", "0"], () => {
             this.lower_clothing = "";
             this.upper_clothing = "";
             this.shoes = "";
         });
-        this.new_line();
-        this.key_triggered_button("Red Pants", ["Control", "1"], () => {
-             this.lower_clothing = "red_pants";
-        });
-        this.new_line();
-        this.key_triggered_button("Shorts", ["Control", "2"], () => {
-            this.lower_clothing = "shorts";
-        });
-        this.new_line();
-        this.key_triggered_button("Short Sleeve Shirt", ["Control", "3"], () => {
-            this.upper_clothing = "short_sleeve";
-        });
-        this.new_line();
-        this.key_triggered_button("Long Sleeve Shirt", ["Control", "4"], () => {
-            this.upper_clothing = "long_sleeve";
-        });
-        this.new_line();
+//         this.new_line();
+//         this.key_triggered_button("Red Pants", ["Control", "1"], () => {
+//              this.lower_clothing = "red_pants";
+//         });
+//         this.new_line();
+//         this.key_triggered_button("Shorts", ["Control", "2"], () => {
+//             this.lower_clothing = "shorts";
+//         });
+//         this.new_line();
+//         this.key_triggered_button("Short Sleeve Shirt", ["Control", "3"], () => {
+//             this.upper_clothing = "short_sleeve";
+//         });
+//         this.new_line();
+//         this.key_triggered_button("Long Sleeve Shirt", ["Control", "4"], () => {
+//             this.upper_clothing = "long_sleeve";
+//         });
+//         this.new_line();
 
     }
 
+    draw_leg(context, program_state, model_transform, t, skin_material, pant_material) {
+        let feet = model_transform.times(Mat4.translation(0,0,-3.65)).times(Mat4.scale(0.5,0.5,0.5));
+        model_transform = model_transform
+                            .times(Mat4.scale(0.35,0.35,1.2))
+                            .times(Mat4.translation(0,0,-(0.5+0.5)))
+                            ;
+        this.shapes.cc.draw(context, program_state, model_transform, pant_material);
+        model_transform = model_transform
+                            .times(Mat4.scale(0.9,0.9,1.2))
+                            .times(Mat4.translation(0,0,-0.9))
+                            ;
+        this.shapes.cc.draw(context, program_state, model_transform, pant_material);
+
+        this.shapes.s.draw(context, program_state, feet, skin_material);
+        return model_transform;
+    }
+
+    draw_arm(context, program_state, model_transform, t, skin_material, shirt_material){
+        let hand_transform = model_transform
+                                .times(Mat4.scale(0.5,0.5,0.5))
+                                .times(Mat4.translation(0,0,-2))
+                                ;
+        model_transform = model_transform
+                                .times(Mat4.scale(0.3,0.3,2.5))
+                                .times(Mat4.translation(0,0,0.3))                                
+                                ;
+        this.shapes.cc.draw(context, program_state, model_transform, shirt_material);
+        this.shapes.s.draw(context, program_state, hand_transform, skin_material);
+        return model_transform;
+    }
+    
+    move_character(model_transform, t) {
+        model_transform = model_transform
+            .times(Mat4.translation(this.x_coord, 0, this.y_coord))
+            .times(Mat4.rotation(this.direction_angle*Math.PI/180,0,1,0));
+        return model_transform
+    }
+
+    darken_maybe(material) {
+        return this.is_dark ? material.override({ambient: .3}) : material;
+    }
+
+    display(context, program_state) {
+        // display():  Called once per frame of animation.
+        // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
+        if (!context.scratchpad.controls) {
+            this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
+            // Define the global camera and projection matrices, which are stored in program_state.
+            program_state.set_camera(Mat4.translation(0, -1, -18));
+        }
+
+//         let x = -1;
+//         let z = 1.3;
+//         let desired = this.attached;
+//         desired = desired.times(Mat4.translation(x,0,z));
+//         this.attached = desired;
+        //desired = desired.map((x,i) => Vector.from(program_state.camera_inverse[i]).mix(x, .1));
+        //program_state.set_camera(desired);
+
+    
+        const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
+        let sun_scaler = 2 - Math.cos(2*t*Math.PI/5);
+        
+//         program_state.set_camera(this.attached);
+        program_state.projection_transform = Mat4.perspective(
+            Math.PI / 4, context.width / context.height, .1, 1000);
+
+        const BLINK_PERIOD = 5;
+        const mod_t = t % BLINK_PERIOD;
+        let eye_state = this.eye_style;
+        if (mod_t == 0) {
+            eye_state = this.eye_style;
+        }
+        else if (mod_t >= BLINK_PERIOD -1 && mod_t < BLINK_PERIOD) {
+            eye_state = EyeStyle.CLOSED;
+        }
+
+        const light_position = vec4(0, 10, 0, 1);
+        let ident = Mat4.identity();
+        //const light_position = vec4(0, 10, 0, 1);
+        const light_color = color(1,1,1,1);
+        //const light_color = hex_color("#2e3469");
+        program_state.lights = [new Light(light_position, light_color, 50)];
+        //program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 10**sun_scaler)];
+        
+        // background
+        let skin_material = this.darken_maybe(this.materials.test.override({color:this.skin_color}));
+        if (this.stage == Backgrounds.NIGHT) {
+            this.shapes.ground.draw(context, program_state, ident.times(Mat4.translation(0,-5,0)
+                .times(Mat4.scale(100,.001,100))), this.materials.grass_night);
+
+            this.shapes.night.draw(context, program_state, ident.times(Mat4.translation(0,0,-200)
+                .times(Mat4.scale(200,150,.001))), this.materials.night);
+        }
+        else {
+            let ground_material = this.stage == Backgrounds.APOCALYPSE ? this.materials.rock2 : (this.stage == Backgrounds.DAY ? this.materials.grass : this.materials.rock);
+            let sky_material = this.stage == Backgrounds.APOCALYPSE ? this.materials.hellscape : (this.stage == Backgrounds.DAY ? this.materials.sky : this.materials.mountain);
+            this.shapes.ground.draw(context, program_state, ident.times(Mat4.translation(0,-5,0)
+                .times(Mat4.scale(100,.001,100))), ground_material);
+
+            this.shapes.plane.draw(context, program_state, ident.times(Mat4.translation(0,10,-200)
+                .times(Mat4.scale(200,150,.001))), sky_material);
+        }
+            
+        let location_transform = this.move_character(Mat4.identity(), t);
+        let body_transform = location_transform.times(Mat4.rotation(-Math.PI/2,1,0,0));
+        let head_transform = Mat4.identity();
+        let head_radius = 2.3;
+        let arm_angle = Math.sin(2*t)/2;
+        let head_angle = Math.sin(2*t)/16;
+        //let head_angle = 0;
+        let r_arm_transform = body_transform
+                            .times(Mat4.translation(1.9,0,0))
+                            .times(Mat4.translation(-1.25,0,1.5))
+                            .times(Mat4.rotation(arm_angle,1,0,0))
+                            .times(Mat4.translation(1.25,0,-1.5))
+                            .times(Mat4.rotation(-0.7,0,1,0));
+        let l_arm_transform = body_transform
+                            .times(Mat4.translation(-1.9,0,0))
+                            .times(Mat4.translation(-1.25,0,1.5))
+                            .times(Mat4.rotation(-arm_angle,1,0,0))
+                            .times(Mat4.translation(1.25,0,-1.5))
+                            .times(Mat4.rotation(0.7,0,1,0));
+
+        // head
+        // (side, up, depth)
+        let face_transform = location_transform
+            .times(Mat4.rotation(-head_angle,1,0,0))
+            .times(Mat4.translation(0,4.3,head_radius));
+        this.draw_face(context, program_state, face_transform, t, skin_material, head_radius, arm_angle/2, eye_state);
+
+        let neck_transform = face_transform.times(Mat4.translation(0,2-4.3,-head_radius))
+             .times(Mat4.scale(.35,.4,.4));
+        this.shapes.cc.draw(context, program_state, neck_transform, skin_material);
+
+        let l_ear_transform = face_transform.times(Mat4.translation(head_radius-.1,2*head_radius-.9-4.3,-head_radius))
+                         .times(Mat4.scale(.35,.4,.4))
+                         .times(Mat4.rotation(-Math.PI/8,0,0,1))
+                         .times(Mat4.rotation(Math.PI/2,0,1,0));
+        this.shapes.cc.draw(context, program_state, l_ear_transform, skin_material);
+        let r_ear_transform = face_transform.times(Mat4.translation(-head_radius+.1,2*head_radius-.9-4.3,-head_radius))
+                         .times(Mat4.scale(.35,.4,.4))
+                         .times(Mat4.rotation(Math.PI/8,0,0,1))
+                         .times(Mat4.rotation(Math.PI/2,0,1,0));
+        this.shapes.cc.draw(context, program_state, r_ear_transform, skin_material);
+
+        head_transform = face_transform.times(Mat4.translation(0,.05,-head_radius))
+                         .times(Mat4.scale(head_radius,head_radius-.01,head_radius));
+        this.shapes.s.draw(context, program_state, head_transform, skin_material);
+        
+
+        //body & legs
+        let shirt_material = this.is_wearing_shirt ? this.darken_maybe(this.materials.shirt) : skin_material;
+        let pant_material = this.is_wearing_pants ? this.darken_maybe(this.materials.pants) : skin_material;
+        this.shapes.cc.draw(context, program_state, body_transform.times(Mat4.scale(1,1,2)), shirt_material);
+        body_transform = body_transform.times(Mat4.translation(0,0,1));
+        this.shapes.s.draw(context, program_state, body_transform.times(Mat4.scale(1,1,1)), shirt_material);
+        body_transform = body_transform.times(Mat4.translation(0,0,-2));
+        this.shapes.s.draw(context, program_state, body_transform.times(Mat4.scale(1,1,1)), pant_material);
+        
+        let l_leg_transform = body_transform.times(Mat4.translation(-0.5,0,0));
+        this.draw_leg(context, program_state, l_leg_transform, t, skin_material, pant_material);
+        let r_leg_transform = body_transform.times(Mat4.translation(0.5,0,0));
+        this.draw_leg(context, program_state, r_leg_transform, t, skin_material, pant_material);
+
+        //arms
+        this.draw_arm(context, program_state, r_arm_transform, t, skin_material, shirt_material);
+        this.draw_arm(context, program_state, l_arm_transform, t, skin_material, shirt_material);
+
+//         if(this.attached !== undefined) {
+//             let desired = this.attached();
+//             if (desired === "solar") { 
+//                 desired = this.initial_camera_location;
+//             } else {
+//                 desired = Mat4.inverse(desired.times(Mat4.translation(0,0,5)));
+//             }
+//             desired = desired.map((x,i) => Vector.from( program_state.camera_inverse[i]).mix(x, 0.1));
+//             program_state.set_camera(desired);
+//         }
+    }
+
+
     draw_face(context, program_state, model_transform, t, skin_material, head_radius, tail_angle, eye_state) {
-        let hair_material = this.materials.hair.override({color:this.hair_color});
-        let eye_material = this.materials.eye;
-        let eye_white = this.materials.eye.override({color:hex_color("#ffffff")});
-        let tear = this.materials.eye.override({color:hex_color("#80b7ff")});
+        let hair_material = this.darken_maybe(this.materials.hair.override({color:this.hair_color}));
+        let eye_material = this.darken_maybe(this.materials.eye);
+        let eye_white = this.darken_maybe(this.materials.eye.override({color:hex_color("#ffffff")}));
+        let tear = this.darken_maybe(this.materials.eye.override({color:hex_color("#80b7ff")}));
 
         this.shapes.t.draw(context, program_state, 
             model_transform.times(Mat4.translation(0,.5*head_radius,-head_radius))
@@ -279,12 +535,12 @@ export class Final_Project extends Scene {
                 ,hair_material);
         //sideburn
         this.shapes.ct.draw(context, program_state, 
-            model_transform.times(Mat4.translation(-2.35,.4,-1.8))
+            model_transform.times(Mat4.translation(-2.35,.36,-1.8))
                 .times(Mat4.rotation(-Math.PI/2,0,1,0))
                 .times(Mat4.scale(1,1.6,.3))
                 ,hair_material);
         this.shapes.ct.draw(context, program_state, 
-            model_transform.times(Mat4.translation(2.35,.4,-1.8))
+            model_transform.times(Mat4.translation(2.35,.36,-1.8))
                 .times(Mat4.rotation(Math.PI/2,0,1,0))
                 .times(Mat4.scale(1,1.6,.3))
                 ,hair_material);
@@ -572,169 +828,6 @@ export class Final_Project extends Scene {
             , eye_material);
         }
 
-    }
-
-    
-    draw_leg(context, program_state, model_transform, t, skin_material, pant_material) {
-        let feet = model_transform.times(Mat4.translation(0,0,-3.65)).times(Mat4.scale(0.5,0.5,0.5));
-        model_transform = model_transform
-                            .times(Mat4.scale(0.35,0.35,1.2))
-                            .times(Mat4.translation(0,0,-(0.5+0.5)))
-                            ;
-        this.shapes.cc.draw(context, program_state, model_transform, pant_material);
-        model_transform = model_transform
-                            .times(Mat4.scale(0.9,0.9,1.2))
-                            .times(Mat4.translation(0,0,-0.9))
-                            ;
-        this.shapes.cc.draw(context, program_state, model_transform, pant_material);
-
-        this.shapes.s.draw(context, program_state, feet, skin_material);
-        return model_transform;
-    }
-
-    draw_arm(context, program_state, model_transform, t, skin_material, shirt_material){
-        let hand_transform = model_transform
-                                .times(Mat4.scale(0.5,0.5,0.5))
-                                .times(Mat4.translation(0,0,-2))
-                                ;
-        model_transform = model_transform
-                                .times(Mat4.scale(0.3,0.3,2.5))
-                                .times(Mat4.translation(0,0,0.3))                                
-                                ;
-        this.shapes.cc.draw(context, program_state, model_transform, shirt_material);
-        this.shapes.s.draw(context, program_state, hand_transform, skin_material);
-        return model_transform;
-    }
-    
-    move_character(model_transform, t) {
-        model_transform = model_transform
-            .times(Mat4.translation(this.x_coord, 0, this.y_coord))
-            .times(Mat4.rotation(this.direction_angle*Math.PI/180,0,1,0));
-        return model_transform
-    }
-
-    display(context, program_state) {
-        // display():  Called once per frame of animation.
-        // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
-        if (!context.scratchpad.controls) {
-            this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
-            // Define the global camera and projection matrices, which are stored in program_state.
-            program_state.set_camera(Mat4.translation(0, -1, -18));
-        }
-
-//         let x = -1;
-//         let z = 1.3;
-//         let desired = this.attached;
-//         desired = desired.times(Mat4.translation(x,0,z));
-//         this.attached = desired;
-        //desired = desired.map((x,i) => Vector.from(program_state.camera_inverse[i]).mix(x, .1));
-        //program_state.set_camera(desired);
-
-    
-        const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
-        let sun_scaler = 2 - Math.cos(2*t*Math.PI/5);
-        
-//         program_state.set_camera(this.attached);
-        program_state.projection_transform = Mat4.perspective(
-            Math.PI / 4, context.width / context.height, .1, 1000);
-
-        const BLINK_PERIOD = 5;
-        const mod_t = t % BLINK_PERIOD;
-        let eye_state = this.eye_style;
-        if (mod_t == 0) {
-            eye_state = this.eye_style;
-        }
-        else if (mod_t >= BLINK_PERIOD -1 && mod_t < BLINK_PERIOD) {
-            eye_state = EyeStyle.CLOSED;
-        }
-        //console.log(mod_t);
-
-        // lighting from asssignment 3 
-        const light_position = vec4(0, 10, 0, 1);
-        //const light_position = vec4(0, 10, 0, 1);
-        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 50)];
-        //program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 10**sun_scaler)];
-        let skin_material = this.materials.test.override({color:this.skin_color});
-        
-        let ident = Mat4.identity();
-        let location_transform = this.move_character(Mat4.identity(), t);
-        let body_transform = location_transform.times(Mat4.rotation(-Math.PI/2,1,0,0));
-        let head_transform = Mat4.identity();
-        let head_radius = 2.3;
-        let arm_angle = Math.sin(2*t)/2;
-        let head_angle = Math.sin(2*t)/16;
-        //let head_angle = 0;
-        let r_arm_transform = body_transform
-                            .times(Mat4.translation(1.9,0,0))
-                            .times(Mat4.translation(-1.25,0,1.5))
-                            .times(Mat4.rotation(arm_angle,1,0,0))
-                            .times(Mat4.translation(1.25,0,-1.5))
-                            .times(Mat4.rotation(-0.7,0,1,0));
-        let l_arm_transform = body_transform
-                            .times(Mat4.translation(-1.9,0,0))
-                            .times(Mat4.translation(-1.25,0,1.5))
-                            .times(Mat4.rotation(-arm_angle,1,0,0))
-                            .times(Mat4.translation(1.25,0,-1.5))
-                            .times(Mat4.rotation(0.7,0,1,0));
-
-        // head
-        // (side, up, depth)
-        this.shapes.plane.draw(context, program_state, ident.times(Mat4.translation(0,-5,0)
-            .times(Mat4.scale(100,.001,100))), this.materials.floor);
-
-        let face_transform = location_transform
-            .times(Mat4.rotation(-head_angle,1,0,0))
-            .times(Mat4.translation(0,4.3,head_radius));
-        this.draw_face(context, program_state, face_transform, t, skin_material, head_radius, arm_angle/2, eye_state);
-
-        let neck_transform = face_transform.times(Mat4.translation(0,2-4.3,-head_radius))
-             .times(Mat4.scale(.35,.4,.4));
-        this.shapes.cc.draw(context, program_state, neck_transform, skin_material);
-
-        let l_ear_transform = face_transform.times(Mat4.translation(head_radius-.1,2*head_radius-.9-4.3,-head_radius))
-                         .times(Mat4.scale(.35,.4,.4))
-                         .times(Mat4.rotation(-Math.PI/8,0,0,1))
-                         .times(Mat4.rotation(Math.PI/2,0,1,0));
-        this.shapes.cc.draw(context, program_state, l_ear_transform, skin_material);
-        let r_ear_transform = face_transform.times(Mat4.translation(-head_radius+.1,2*head_radius-.9-4.3,-head_radius))
-                         .times(Mat4.scale(.35,.4,.4))
-                         .times(Mat4.rotation(Math.PI/8,0,0,1))
-                         .times(Mat4.rotation(Math.PI/2,0,1,0));
-        this.shapes.cc.draw(context, program_state, r_ear_transform, skin_material);
-
-        head_transform = face_transform.times(Mat4.translation(0,.05,-head_radius))
-                         .times(Mat4.scale(head_radius,head_radius-.01,head_radius));
-        this.shapes.s.draw(context, program_state, head_transform, skin_material);
-        
-
-        //body & legs
-        let shirt_material = this.is_wearing_shirt ? this.materials.shirt : skin_material;
-        let pant_material = this.is_wearing_pants ? this.materials.pants : skin_material;
-        this.shapes.cc.draw(context, program_state, body_transform.times(Mat4.scale(1,1,2)), shirt_material);
-        body_transform = body_transform.times(Mat4.translation(0,0,1));
-        this.shapes.s.draw(context, program_state, body_transform.times(Mat4.scale(1,1,1)), shirt_material);
-        body_transform = body_transform.times(Mat4.translation(0,0,-2));
-        this.shapes.s.draw(context, program_state, body_transform.times(Mat4.scale(1,1,1)), pant_material);
-        
-        let l_leg_transform = body_transform.times(Mat4.translation(-0.5,0,0));
-        this.draw_leg(context, program_state, l_leg_transform, t, skin_material, pant_material);
-        let r_leg_transform = body_transform.times(Mat4.translation(0.5,0,0));
-        this.draw_leg(context, program_state, r_leg_transform, t, skin_material, pant_material);
-
-        //arms
-        this.draw_arm(context, program_state, r_arm_transform, t, skin_material, shirt_material);
-        this.draw_arm(context, program_state, l_arm_transform, t, skin_material, shirt_material);
-
-//         if(this.attached !== undefined) {
-//             let desired = this.attached();
-//             if (desired === "solar") { 
-//                 desired = this.initial_camera_location;
-//             } else {
-//                 desired = Mat4.inverse(desired.times(Mat4.translation(0,0,5)));
-//             }
-//             desired = desired.map((x,i) => Vector.from( program_state.camera_inverse[i]).mix(x, 0.1));
-//             program_state.set_camera(desired);
-//         }
     }
 }
 
