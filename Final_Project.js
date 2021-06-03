@@ -186,6 +186,11 @@ export class Final_Project extends Scene {
                     ambient: 1, diffusivity: 0.1, specularity: 0.1,
                     texture: new Texture("assets/fire.jpg")
                 }),
+                mic: new Material(new defs.Textured_Phong(), {
+                    color: hex_color("#000000"),
+                    ambient: 1, diffusivity: 0.1, specularity: 0.1,
+                    texture: new Texture("assets/mic.jpg")
+                }),
         }
 
 // not sure if we need this since im not using it rn 
@@ -197,9 +202,37 @@ export class Final_Project extends Scene {
         this.eye_style = EyeStyle.CRY;
         this.mouth_style = MouthStyle.CLOSED;
         this.cry = true;
-        this.is_dark = false;
+        this.is_dark = this.has_mic = this.has_cat = false;
         this.stage = Backgrounds.DAY;
         this.attached = this.initial_camera_location;
+
+        this.music = new Audio("assets/bubblegum.mp3");
+        this.music.loop = true;
+        // this.music.pause();
+    }
+
+    set_random_song() {
+        if (this.do_play_metal()) {
+            this.set_metal_song();
+        }
+        else {
+            this.music.pause();
+            let n = Math.floor(Math.random() * 3); //0-2  
+            if (n == 0 ) {this.music = new Audio("assets/bubblegum.mp3");}
+            else if (n == 1 ) {this.music = new Audio("assets/september.mp3");}
+            else {this.music = new Audio("assets/badguy.mp3");}
+            this.music.loop = true;
+        }
+    }
+
+    set_metal_song() {
+        this.music.pause();
+        this.music = new Audio("assets/metal1.mp3");
+        this.music.loop = true;
+    }
+
+    do_play_metal() {
+        return this.has_cat && this.has_mic; 
     }
 
     move_camera_left() {
@@ -256,6 +289,21 @@ export class Final_Project extends Scene {
         this.live_string(box => {
             box.textContent = "------------------- Customize Character -------------------"
         });
+        this.key_triggered_button("None", ["Item"], () => {this.has_mic = false; this.has_cat = false; this.music.pause();});
+        this.key_triggered_button("Microphone", ["Item"], () => {
+
+                this.has_mic = true;
+                this.set_random_song();
+                this.music.play();
+            });
+        this.key_triggered_button("Cat Ears", ["Item"], () => {
+                this.has_cat = true;
+                console.log(this.do_play_metal());
+                if (this.do_play_metal()) {
+                    this.set_metal_song();
+                    this.music.play();
+                }
+            });
         //this.control_panel.innerHTML += "------------------- Customize Character -------------------";
         //this.new_line();
         //this.control_panel.innerHTML += "Face";
@@ -301,11 +349,11 @@ export class Final_Project extends Scene {
         this.key_triggered_button("Apocalypse", ["Stage"], () => {this.stage = Backgrounds.APOCALYPSE; this.is_dark = true;});
         this.new_line();
 
-        this.key_triggered_button("Reset Clothing", ["Control", "0"], () => {
-            this.lower_clothing = "";
-            this.upper_clothing = "";
-            this.shoes = "";
-        });
+//         this.key_triggered_button("Reset Clothing", ["Control", "0"], () => {
+//             this.lower_clothing = "";
+//             this.upper_clothing = "";
+//             this.shoes = "";
+//         });
 //         this.new_line();
 //         this.key_triggered_button("Red Pants", ["Control", "1"], () => {
 //              this.lower_clothing = "red_pants";
@@ -356,6 +404,38 @@ export class Final_Project extends Scene {
         this.shapes.s.draw(context, program_state, hand_transform, skin_material);
         return model_transform;
     }
+
+    draw_mic_arm(context, program_state, model_transform, t, skin_material, shirt_material){
+        let hand_transform = model_transform
+                                .times(Mat4.scale(0.5,0.5,0.5))
+                                .times(Mat4.translation(0,0,-2))
+                                ;
+        model_transform = model_transform
+                                .times(Mat4.scale(0.3,0.3,2.5))
+                                .times(Mat4.translation(0,0,0.3))                                
+                                ;
+        this.shapes.cc.draw(context, program_state, model_transform, shirt_material);
+        this.shapes.s.draw(context, program_state, hand_transform, skin_material);
+
+        let mic_body = skin_material.override({color:hex_color("#292929")}); 
+        this.shapes.cc.draw(context,program_state,
+            hand_transform
+            .times(Mat4.rotation(Math.PI/4,0,0,1))
+            .times(Mat4.rotation(Math.PI/3,1,0,0))
+            .times(Mat4.translation(0,0,.4))
+            .times(Mat4.scale(.5,.5,3.5))
+            ,mic_body);
+       this.shapes.s.draw(context,program_state,
+            hand_transform
+            .times(Mat4.rotation(-3*Math.PI/4,0,0,1))
+            .times(Mat4.rotation(-4*Math.PI/3,1,0,0))
+            .times(Mat4.translation(0,0,-2.5))
+
+            .times(Mat4.scale(.8,.8,.8))
+            ,this.materials.mic);
+        return model_transform;
+    }
+
     
     move_character(model_transform, t) {
         model_transform = model_transform
@@ -376,15 +456,6 @@ export class Final_Project extends Scene {
             // Define the global camera and projection matrices, which are stored in program_state.
             program_state.set_camera(Mat4.translation(0, -1, -18));
         }
-
-//         let x = -1;
-//         let z = 1.3;
-//         let desired = this.attached;
-//         desired = desired.times(Mat4.translation(x,0,z));
-//         this.attached = desired;
-        //desired = desired.map((x,i) => Vector.from(program_state.camera_inverse[i]).mix(x, .1));
-        //program_state.set_camera(desired);
-
     
         const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
         let sun_scaler = 2 - Math.cos(2*t*Math.PI/5);
@@ -394,13 +465,23 @@ export class Final_Project extends Scene {
             Math.PI / 4, context.width / context.height, .1, 1000);
 
         const BLINK_PERIOD = 5;
-        const mod_t = t % BLINK_PERIOD;
+        const blink_t = t % BLINK_PERIOD;
         let eye_state = this.eye_style;
-        if (mod_t == 0) {
-            eye_state = this.eye_style;
-        }
-        else if (mod_t >= BLINK_PERIOD -1 && mod_t < BLINK_PERIOD) {
+        if (this.do_play_metal() && blink_t >= BLINK_PERIOD/2) {
             eye_state = EyeStyle.CLOSED;
+        }
+        else if (blink_t >= BLINK_PERIOD -1) {
+            eye_state = EyeStyle.CLOSED;
+        }
+
+        let MOUTH_PERIOD = this.do_play_metal() ? .3 : .5;
+        const mouth_t = t % MOUTH_PERIOD;
+        let mouth_state = this.mouth_style;
+        if (this.has_mic) {
+            mouth_state = MouthStyle.CLOSED;
+            if (mouth_t >= MOUTH_PERIOD/2) {
+                mouth_state = MouthStyle.OPEN;
+            }
         }
 
         const light_position = vec4(0, 10, 0, 1);
@@ -435,8 +516,16 @@ export class Final_Project extends Scene {
         let head_transform = Mat4.identity();
         let head_radius = 2.3;
         let arm_angle = Math.sin(2*t)/2;
+        let mic_arm_angle = 1.5 + Math.sin(2*t)/3;
         let head_angle = Math.sin(2*t)/16;
-        //let head_angle = 0;
+        if (this.do_play_metal()) {
+            head_angle = Math.sin(30*t)/8;
+            arm_angle = Math.sin(20*t)/2;
+            mic_arm_angle = 1.5 + Math.sin(30*t)/3;
+        }
+        else if (this.has_mic) {
+            head_angle = Math.sin(4*t)/16;
+        }
         let r_arm_transform = body_transform
                             .times(Mat4.translation(1.9,0,0))
                             .times(Mat4.translation(-1.25,0,1.5))
@@ -446,7 +535,7 @@ export class Final_Project extends Scene {
         let l_arm_transform = body_transform
                             .times(Mat4.translation(-1.9,0,0))
                             .times(Mat4.translation(-1.25,0,1.5))
-                            .times(Mat4.rotation(-arm_angle,1,0,0))
+                            .times(Mat4.rotation(this.has_mic ? -mic_arm_angle : -arm_angle,1,0,0))
                             .times(Mat4.translation(1.25,0,-1.5))
                             .times(Mat4.rotation(0.7,0,1,0));
 
@@ -455,7 +544,7 @@ export class Final_Project extends Scene {
         let face_transform = location_transform
             .times(Mat4.rotation(-head_angle,1,0,0))
             .times(Mat4.translation(0,4.3,head_radius));
-        this.draw_face(context, program_state, face_transform, t, skin_material, head_radius, arm_angle/2, eye_state);
+        this.draw_face(context, program_state, face_transform, t, skin_material, head_radius, arm_angle/2, eye_state, mouth_state);
 
         let neck_transform = face_transform.times(Mat4.translation(0,2-4.3,-head_radius))
              .times(Mat4.scale(.35,.4,.4));
@@ -493,7 +582,12 @@ export class Final_Project extends Scene {
 
         //arms
         this.draw_arm(context, program_state, r_arm_transform, t, skin_material, shirt_material);
-        this.draw_arm(context, program_state, l_arm_transform, t, skin_material, shirt_material);
+        if (this.has_mic) {
+            this.draw_mic_arm(context, program_state, l_arm_transform, t, skin_material, shirt_material); 
+        } else {
+            this.draw_arm(context, program_state, l_arm_transform, t, skin_material, shirt_material);    
+        }
+
 
 //         if(this.attached !== undefined) {
 //             let desired = this.attached();
@@ -508,7 +602,7 @@ export class Final_Project extends Scene {
     }
 
 
-    draw_face(context, program_state, model_transform, t, skin_material, head_radius, tail_angle, eye_state) {
+    draw_face(context, program_state, model_transform, t, skin_material, head_radius, tail_angle, eye_state, mouth_state) {
         let hair_material = this.darken_maybe(this.materials.hair.override({color:this.hair_color}));
         let eye_material = this.darken_maybe(this.materials.eye);
         let eye_white = this.darken_maybe(this.materials.eye.override({color:hex_color("#ffffff")}));
@@ -544,6 +638,48 @@ export class Final_Project extends Scene {
                 .times(Mat4.rotation(Math.PI/2,0,1,0))
                 .times(Mat4.scale(1,1.6,.3))
                 ,hair_material);
+
+        // cat 
+        if (this.has_cat) {
+        this.shapes.ct.draw(context, program_state, 
+            model_transform.times(Mat4.translation(2.3,1.97,-1.))
+                .times(Mat4.translation(-1,0,0))
+                .times(Mat4.rotation(-tail_angle/2,1,-1,0))
+                .times(Mat4.translation(1,0,0))
+                .times(Mat4.rotation(-Math.PI/3.5,0,0,1)) 
+                .times(Mat4.rotation(-Math.PI/2,1,0,0))
+                .times(Mat4.scale(.9,.5,.7))   
+                ,hair_material);
+        this.shapes.ct.draw(context, program_state, 
+            model_transform.times(Mat4.translation(2.1,1.77,-.85))
+                .times(Mat4.translation(-.55,0,0))
+                .times(Mat4.rotation(-tail_angle/2,1,-1,0))
+                .times(Mat4.translation(.55,0,0))
+                .times(Mat4.rotation(-Math.PI/3.5,0,0,1))
+                .times(Mat4.rotation(-Math.PI/2,1,0,0))
+                .times(Mat4.scale(.7,.5,.6))   
+                ,hair_material.override({color: hex_color("#edede4")}));
+                         
+        this.shapes.ct.draw(context, program_state, 
+            model_transform.times(Mat4.translation(-2.3,1.97,-1.))
+                .times(Mat4.translation(1,0,0))
+                .times(Mat4.rotation(-tail_angle/2,1,1,0))
+                .times(Mat4.translation(-1,0,0))
+                .times(Mat4.rotation(Math.PI/3.5,0,0,1)) 
+                .times(Mat4.rotation(-Math.PI/2,1,0,0))
+                .times(Mat4.scale(.9,.5,.7))   
+                ,hair_material);
+        this.shapes.ct.draw(context, program_state, 
+            model_transform.times(Mat4.translation(-2.1,1.77,-.85))
+                .times(Mat4.translation(.55,0,0))
+                .times(Mat4.rotation(-tail_angle/2,1,1,0))
+                .times(Mat4.translation(-.55,0,0))
+                .times(Mat4.rotation(Math.PI/3.5,0,0,1))
+                .times(Mat4.rotation(-Math.PI/2,1,0,0))
+                .times(Mat4.scale(.7,.5,.6))   
+                ,hair_material.override({color: hex_color("#edede4")}));   
+        }
+
 
 
         if (this.hair_style == HairStyles.HORN) {
@@ -797,7 +933,7 @@ export class Final_Project extends Scene {
        
         
         //mouth
-        if (this.mouth_style == MouthStyle.V) {
+        if (mouth_state == MouthStyle.V) {
             this.shapes.cube.draw(context, program_state, 
                 model_transform.times(Mat4.translation(.08,-1.5,-.25))
                     .times(Mat4.rotation(Math.PI/10,1,0,0))
@@ -811,7 +947,7 @@ export class Final_Project extends Scene {
                     .times(Mat4.scale(.16,.05,.0001))
                 , eye_material);          
         }
-        else if (this.mouth_style == MouthStyle.OPEN) {
+        else if (mouth_state == MouthStyle.OPEN) {
             this.shapes.s.draw(context, program_state, 
                 model_transform.times(Mat4.translation(0,-1.5,-.3))
                     .times(Mat4.scale(.28,.15,.1))
