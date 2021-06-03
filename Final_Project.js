@@ -387,12 +387,25 @@ export class Final_Project extends Scene {
 
     }
 
-    draw_leg(context, program_state, model_transform, t, skin_material, pant_material) {
-        let feet = model_transform.times(Mat4.translation(0,0,-3.65)).times(Mat4.scale(0.5,0.5,0.5));
-        model_transform = model_transform
+
+    draw_leg(context, program_state, model_transform, t, skin_material, pant_material, r) {
+        if (this.control.run) this.upper_angle = Math.sin(100*t)*0.5;
+        else this.upper_angle = Math.sin(2*t)*0.5;
+        let feet = model_transform
+        if (r) {
+            feet = feet.times(Mat4.rotation(this.upper_angle,1,0,0)).times(Mat4.translation(0,0,-3.65)).times(Mat4.scale(0.5,0.5,0.5));
+            model_transform = model_transform
+                            .times(Mat4.rotation(this.upper_angle,1,0,0))
                             .times(Mat4.scale(0.35,0.35,1.2))
                             .times(Mat4.translation(0,0,-(0.5+0.5)))
-                            ;
+                            ; }
+        else {
+            feet = feet.times(Mat4.rotation(-this.upper_angle,1,0,0)).times(Mat4.translation(0,0,-3.65)).times(Mat4.scale(0.5,0.5,0.5));
+            model_transform = model_transform
+                            .times(Mat4.rotation(-this.upper_angle,1,0,0))
+                            .times(Mat4.scale(0.35,0.35,1.2))
+                            .times(Mat4.translation(0,0,-(0.5+0.5)))
+                            ;}
         this.shapes.cc.draw(context, program_state, model_transform, pant_material);
         model_transform = model_transform
                             .times(Mat4.scale(0.9,0.9,1.2))
@@ -450,7 +463,24 @@ export class Final_Project extends Scene {
     }
 
     
-    move_character(model_transform, t) {
+    set_location(dt) {
+        let speed = 2.0;
+        if(this.control.run) speed = 10.0;
+        if(this.control.w) {
+            this.y_coord -= dt*speed;
+        }
+        if(this.control.s) {
+            this.y_coord += dt*speed;
+        }
+        if(this.control.a) {
+            this.x_coord -= dt*speed;
+        }
+        if(this.control.d) {
+            this.x_coord += dt*speed;
+        }
+    }
+
+    move_character(model_transform, dt) {
         model_transform = model_transform
             .times(Mat4.translation(this.x_coord, 0, this.y_coord))
             .times(Mat4.rotation(this.direction_angle*Math.PI/180,0,1,0));
@@ -524,7 +554,8 @@ export class Final_Project extends Scene {
                 .times(Mat4.scale(200,150,.001))), sky_material);
         }
             
-        let location_transform = this.move_character(Mat4.identity(), t);
+        this.set_location(dt); 
+        let location_transform = this.move_character(Mat4.identity(), dt);
         let body_transform = location_transform.times(Mat4.rotation(-Math.PI/2,1,0,0));
         let head_transform = Mat4.identity();
         let head_radius = 2.3;
@@ -532,8 +563,8 @@ export class Final_Project extends Scene {
         let mic_arm_angle = 1.5 + Math.sin(2*t)/3;
         let head_angle = Math.sin(2*t)/16;
         if (this.do_play_metal()) {
-            head_angle = Math.sin(30*t)/8;
-            arm_angle = Math.sin(20*t)/2;
+            head_angle = Math.sin(35*t)/8;
+            arm_angle = Math.sin(25*t)/2;
             mic_arm_angle = 1.5 + Math.sin(30*t)/3;
         }
         else if (this.has_mic) {
@@ -589,9 +620,9 @@ export class Final_Project extends Scene {
         this.shapes.s.draw(context, program_state, body_transform.times(Mat4.scale(1,1,1)), pant_material);
         
         let l_leg_transform = body_transform.times(Mat4.translation(-0.5,0,0));
-        this.draw_leg(context, program_state, l_leg_transform, t, skin_material, pant_material);
+        this.draw_leg(context, program_state, l_leg_transform, t, skin_material, pant_material, false);
         let r_leg_transform = body_transform.times(Mat4.translation(0.5,0,0));
-        this.draw_leg(context, program_state, r_leg_transform, t, skin_material, pant_material);
+        this.draw_leg(context, program_state, r_leg_transform, t, skin_material, pant_material, true);
 
         //arms
         this.draw_arm(context, program_state, r_arm_transform, t, skin_material, shirt_material);
@@ -979,199 +1010,7 @@ export class Final_Project extends Scene {
 
     }
 
-    
-    draw_leg(context, program_state, model_transform, t, skin_material, pant_material, r) {
-        if (this.control.run) this.upper_angle = Math.sin(100*t)*0.5;
-        else this.upper_angle = Math.sin(2*t)*0.5;
-        let feet = model_transform
-        if (r) {
-            feet = feet.times(Mat4.rotation(this.upper_angle,1,0,0)).times(Mat4.translation(0,0,-3.65)).times(Mat4.scale(0.5,0.5,0.5));
-            model_transform = model_transform
-                            .times(Mat4.rotation(this.upper_angle,1,0,0))
-                            .times(Mat4.scale(0.35,0.35,1.2))
-                            .times(Mat4.translation(0,0,-(0.5+0.5)))
-                            ; }
-        else {
-            feet = feet.times(Mat4.rotation(-this.upper_angle,1,0,0)).times(Mat4.translation(0,0,-3.65)).times(Mat4.scale(0.5,0.5,0.5));
-            model_transform = model_transform
-                            .times(Mat4.rotation(-this.upper_angle,1,0,0))
-                            .times(Mat4.scale(0.35,0.35,1.2))
-                            .times(Mat4.translation(0,0,-(0.5+0.5)))
-                            ;}
-        this.shapes.cc.draw(context, program_state, model_transform, pant_material);
-        model_transform = model_transform
-                            .times(Mat4.scale(0.9,0.9,1.2))
-                            .times(Mat4.translation(0,0,-0.9))
-                            ;
-        this.shapes.cc.draw(context, program_state, model_transform, pant_material);
 
-        this.shapes.s.draw(context, program_state, feet, skin_material);
-        return model_transform;
-    }
-
-    draw_arm(context, program_state, model_transform, t, skin_material, shirt_material){
-        let hand_transform = model_transform
-                                .times(Mat4.scale(0.5,0.5,0.5))
-                                .times(Mat4.translation(0,0,-2))
-                                ;
-        model_transform = model_transform
-                                .times(Mat4.scale(0.3,0.3,2.5))
-                                .times(Mat4.translation(0,0,0.3))                                
-                                ;
-        this.shapes.cc.draw(context, program_state, model_transform, shirt_material);
-        this.shapes.s.draw(context, program_state, hand_transform, skin_material);
-        return model_transform;
-    }
-    
-    set_location(dt) {
-        let speed = 2.0;
-        if(this.control.run) speed = 10.0;
-        if(this.control.w) {
-            this.y_coord -= dt*speed;
-        }
-        if(this.control.s) {
-            this.y_coord += dt*speed;
-        }
-        if(this.control.a) {
-            this.x_coord -= dt*speed;
-        }
-        if(this.control.d) {
-            this.x_coord += dt*speed;
-        }
-    }
-
-    move_character(model_transform, dt) {
-        model_transform = model_transform
-            .times(Mat4.translation(this.x_coord, 0, this.y_coord))
-            .times(Mat4.rotation(this.direction_angle*Math.PI/180,0,1,0));
-        return model_transform
-    }
-
-    display(context, program_state) {
-        // display():  Called once per frame of animation.
-        // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
-        if (!context.scratchpad.controls) {
-            this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
-            // Define the global camera and projection matrices, which are stored in program_state.
-            program_state.set_camera(Mat4.translation(0, -1, -18));
-        }
-
-//         let x = -1;
-//         let z = 1.3;
-//         let desired = this.attached;
-//         desired = desired.times(Mat4.translation(x,0,z));
-//         this.attached = desired;
-        //desired = desired.map((x,i) => Vector.from(program_state.camera_inverse[i]).mix(x, .1));
-        //program_state.set_camera(desired);
-
-    
-        const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
-        let sun_scaler = 2 - Math.cos(2*t*Math.PI/5);
-        
-//         program_state.set_camera(this.attached);
-        program_state.projection_transform = Mat4.perspective(
-            Math.PI / 4, context.width / context.height, .1, 1000);
-
-        const BLINK_PERIOD = 5;
-        const mod_t = t % BLINK_PERIOD;
-        let eye_state = this.eye_style;
-        if (mod_t == 0) {
-            eye_state = this.eye_style;
-        }
-        else if (mod_t >= BLINK_PERIOD -1 && mod_t < BLINK_PERIOD) {
-            eye_state = EyeStyle.CLOSED;
-        }
-        //console.log(mod_t);
-
-        // lighting from asssignment 3 
-        const light_position = vec4(0, 10, 0, 1);
-        //const light_position = vec4(0, 10, 0, 1);
-        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 50)];
-        //program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 10**sun_scaler)];
-        let skin_material = this.materials.test.override({color:this.skin_color});
-        
-        let ident = Mat4.identity();
-        this.set_location(dt); 
-        let location_transform = this.move_character(Mat4.identity(), dt);
-        let body_transform = location_transform.times(Mat4.rotation(-Math.PI/2,1,0,0));
-        let head_transform = Mat4.identity();
-        let head_radius = 2.3;
-        
-        let arm_angle = Math.sin(2*t)/2;
-        let head_angle = Math.sin(2*t)/16;
-        //let head_angle = 0;
-        let r_arm_transform = body_transform
-                            .times(Mat4.translation(1.9,0,0))
-                            .times(Mat4.translation(-1.25,0,1.5))
-                            .times(Mat4.rotation(arm_angle,1,0,0))
-                            .times(Mat4.translation(1.25,0,-1.5))
-                            .times(Mat4.rotation(-0.7,0,1,0));
-        let l_arm_transform = body_transform
-                            .times(Mat4.translation(-1.9,0,0))
-                            .times(Mat4.translation(-1.25,0,1.5))
-                            .times(Mat4.rotation(-arm_angle,1,0,0))
-                            .times(Mat4.translation(1.25,0,-1.5))
-                            .times(Mat4.rotation(0.7,0,1,0));
-
-        // head
-        // (side, up, depth)
-        this.shapes.plane.draw(context, program_state, ident.times(Mat4.translation(0,-5,0)
-            .times(Mat4.scale(100,.001,100))), this.materials.floor);
-
-        let face_transform = location_transform
-            .times(Mat4.rotation(-head_angle,1,0,0))
-            .times(Mat4.translation(0,4.3,head_radius));
-        this.draw_face(context, program_state, face_transform, t, skin_material, head_radius, arm_angle/2, eye_state);
-
-        let neck_transform = face_transform.times(Mat4.translation(0,2-4.3,-head_radius))
-             .times(Mat4.scale(.35,.4,.4));
-        this.shapes.cc.draw(context, program_state, neck_transform, skin_material);
-
-        let l_ear_transform = face_transform.times(Mat4.translation(head_radius-.1,2*head_radius-.9-4.3,-head_radius))
-                         .times(Mat4.scale(.35,.4,.4))
-                         .times(Mat4.rotation(-Math.PI/8,0,0,1))
-                         .times(Mat4.rotation(Math.PI/2,0,1,0));
-        this.shapes.cc.draw(context, program_state, l_ear_transform, skin_material);
-        let r_ear_transform = face_transform.times(Mat4.translation(-head_radius+.1,2*head_radius-.9-4.3,-head_radius))
-                         .times(Mat4.scale(.35,.4,.4))
-                         .times(Mat4.rotation(Math.PI/8,0,0,1))
-                         .times(Mat4.rotation(Math.PI/2,0,1,0));
-        this.shapes.cc.draw(context, program_state, r_ear_transform, skin_material);
-
-        head_transform = face_transform.times(Mat4.translation(0,.05,-head_radius))
-                         .times(Mat4.scale(head_radius,head_radius-.01,head_radius));
-        this.shapes.s.draw(context, program_state, head_transform, skin_material);
-        
-
-        //body & legs
-        let shirt_material = this.is_wearing_shirt ? this.materials.shirt : skin_material;
-        let pant_material = this.is_wearing_pants ? this.materials.pants : skin_material;
-        this.shapes.cc.draw(context, program_state, body_transform.times(Mat4.scale(1,1,2)), shirt_material);
-        body_transform = body_transform.times(Mat4.translation(0,0,1));
-        this.shapes.s.draw(context, program_state, body_transform.times(Mat4.scale(1,1,1)), shirt_material);
-        body_transform = body_transform.times(Mat4.translation(0,0,-2));
-        this.shapes.s.draw(context, program_state, body_transform.times(Mat4.scale(1,1,1)), pant_material);
-        
-        let l_leg_transform = body_transform.times(Mat4.translation(-0.5,0,0));
-        this.draw_leg(context, program_state, l_leg_transform, t, skin_material, pant_material, false);
-        let r_leg_transform = body_transform.times(Mat4.translation(0.5,0,0));
-        this.draw_leg(context, program_state, r_leg_transform, t, skin_material, pant_material, true);
-
-        //arms
-        this.draw_arm(context, program_state, r_arm_transform, t, skin_material, shirt_material);
-        this.draw_arm(context, program_state, l_arm_transform, t, skin_material, shirt_material);
-
-//         if(this.attached !== undefined) {
-//             let desired = this.attached();
-//             if (desired === "solar") { 
-//                 desired = this.initial_camera_location;
-//             } else {
-//                 desired = Mat4.inverse(desired.times(Mat4.translation(0,0,5)));
-//             }
-//             desired = desired.map((x,i) => Vector.from( program_state.camera_inverse[i]).mix(x, 0.1));
-//             program_state.set_camera(desired);
-//         }
-    }
 }
 
 
