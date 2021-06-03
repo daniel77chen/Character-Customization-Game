@@ -113,13 +113,13 @@ export class Final_Project extends Scene {
 
                 grass: new Material(new Shadow_Textured_Phong_Shader(1), {
                     color: color(.25, .25, .25, 1), 
-                    ambient: .4, diffusivity: .5, specularity: 0.1,
+                    ambient: .4, diffusivity: .6, specularity: 0.1,
                     color_texture: new Texture("assets/grass-128.jpg"),
                     light_depth_texture: null
                 }),
                 grass_night: new Material(new Shadow_Textured_Phong_Shader(1), {
                     color: color(.25, .25, .25, 1), 
-                    ambient: .2, diffusivity: 0.1, specularity: 0.1,
+                    ambient: .2, diffusivity: .6, specularity: 0.1,
                     color_texture: new Texture("assets/grass-128.jpg"),
                     light_depth_texture: null
                 }),
@@ -137,7 +137,7 @@ export class Final_Project extends Scene {
                 }),
                 rock: new Material(new Shadow_Textured_Phong_Shader(1), {
                     color: color(.25, .25, .25, 1), 
-                    ambient: .4, diffusivity: .5, specularity: 0.2,
+                    ambient: .4, diffusivity: .6, specularity: 0.2,
                     color_texture: new Texture("assets/rock2.jpg"),
                     light_depth_texture: null
                 }),
@@ -149,7 +149,7 @@ export class Final_Project extends Scene {
                 }),
                 rock2: new Material(new Shadow_Textured_Phong_Shader(1), {
                     color: color(.15, .15, .15, 1), 
-                    ambient: .2, diffusivity: .5, specularity: 0.5,
+                    ambient: .2, diffusivity: .6, specularity: 0.5,
                     color_texture: new Texture("assets/rock3.jpg"),
                     light_depth_texture: null
                 }),
@@ -161,8 +161,14 @@ export class Final_Project extends Scene {
                 }),
                 mic: new Material(new Shadow_Textured_Phong_Shader(1), {
                     color: color(.25, .25, .25, 1), 
-                    ambient: .4, diffusivity: 0.1, specularity: 0.1,
+                    ambient: .4, diffusivity: 0.5, specularity: 0.1,
                     color_texture: new Texture("assets/mic.jpg"),
+                    light_depth_texture: null
+                }),
+                duck: new Material(new Shadow_Textured_Phong_Shader(1), {
+                    color: color(.5, .5, .5, 1), 
+                    ambient: .5, diffusivity: 0.9, specularity: 1,
+                    color_texture: new Texture("assets/duck.jpg"),
                     light_depth_texture: null
                 })
         }
@@ -180,9 +186,8 @@ export class Final_Project extends Scene {
         this.eye_style = EyeStyle.CRY;
         this.mouth_style = MouthStyle.CLOSED;
         this.cry = true;
-        this.is_dark = this.has_mic = this.has_cat = false;
+        this.is_dark = this.has_mic = this.has_cat = this.has_duck = false;
         this.stage = Backgrounds.DAY;
-        this.attached = this.initial_camera_location;
 
         this.music = new Audio("assets/bubblegum.mp3");
         this.music.loop = true;
@@ -286,7 +291,7 @@ export class Final_Project extends Scene {
     }
 
     do_play_metal() {
-        return this.has_cat && this.has_mic; 
+        return this.has_cat && this.has_mic && this.has_duck; 
     }
 
     move_camera_left() {
@@ -349,22 +354,7 @@ export class Final_Project extends Scene {
         this.live_string(box => {
             box.textContent = "------------------- Customize Character -------------------"
         });
-        this.key_triggered_button("None", ["Item"], () => {this.has_mic = false; this.has_cat = false; this.music.pause();});
-        this.key_triggered_button("Microphone", ["Item"], () => {
-
-                this.has_mic = true;
-                this.set_random_song();
-                this.music.play();
-            });
-        this.key_triggered_button("Cat Ears", ["Item"], () => {
-                this.has_cat = true;
-                console.log(this.do_play_metal());
-                if (this.do_play_metal()) {
-                    this.set_metal_song();
-                    this.music.play();
-                }
-            });
-        //this.control_panel.innerHTML += "Face";
+        this.live_string(box => {box.textContent = "----- Head and Body"});
         this.new_line();
         this.key_triggered_button("Default", ["Hair"], () => {this.set_hair(HairStyles.HORN)});
         this.key_triggered_button("Edgy", ["Hair"], () => {this.set_hair(HairStyles.EDGY)});
@@ -400,7 +390,31 @@ export class Final_Project extends Scene {
             });
         this.new_line();
         //this.control_panel.innerHTML += "Backgrounds";
+        this.live_string(box => {box.textContent = "----- Other"});
         this.new_line();
+        this.key_triggered_button("None", ["Item"], () => {this.has_mic = false; this.has_cat = false; this.has_duck = false; this.music.pause();});
+        this.key_triggered_button("Microphone", ["Item"], () => {
+
+                this.has_mic = true;
+                this.set_random_song();
+                this.music.play();
+            });
+        this.key_triggered_button("Cat Ears", ["Item"], () => {
+                this.has_cat = true;
+                console.log(this.do_play_metal());
+                if (this.do_play_metal()) {
+                    this.set_metal_song();
+                    this.music.play();
+                }
+            });
+        this.key_triggered_button("Duck", ["Item"], () => {
+                this.has_duck = true;
+                console.log(this.do_play_metal());
+                if (this.do_play_metal()) {
+                    this.set_metal_song();
+                    this.music.play();
+                }
+            });
         this.key_triggered_button("Day", ["Stage"], () => {this.stage = Backgrounds.DAY; this.is_dark = false;});
         this.key_triggered_button("Scenic", ["Stage"], () => {this.stage = Backgrounds.FUJI; this.is_dark = false;});
         this.key_triggered_button("Night", ["Stage"], () => {this.stage = Backgrounds.NIGHT; this.is_dark = true;});
@@ -435,6 +449,17 @@ export class Final_Project extends Scene {
         this.shapes.cc.draw(context, program_state, model_transform, !shadow_pass? this.pure : pant_material);
 
         this.shapes.s.draw(context, program_state, feet, !shadow_pass? this.pure : skin_material);
+        if (this.has_duck) {
+        let duck_body = skin_material.override({color:hex_color("#f5c751")}); 
+        this.shapes.t.draw(context, program_state, feet
+            .times(Mat4.scale(2,2,3))
+            , !shadow_pass? this.pure : duck_body);
+        this.shapes.s.draw(context, program_state, feet
+            .times(Mat4.translation(0,-2,0.9))
+            .times(Mat4.rotation(-Math.PI/2,0,1,0))
+            .times(Mat4.rotation(-Math.PI/2,0,0,1))
+            , !shadow_pass? this.pure : this.materials.duck);       
+        }
         return model_transform;
     }
 
