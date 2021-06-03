@@ -93,6 +93,13 @@ export class Final_Project extends Scene {
         this.x_coord = this.y_coord = 0;
         this.direction_angle = 0;
         this.lower_clothing = this.upper_clothing = this.shoes = "";
+        this.control = {};
+        this.control.w = false;
+        this.control.a = false;
+        this.control.s = false;
+        this.control.d = false;
+        this.control.run = false;
+        this.upper_angle = this.lower_angle = 0.0;
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
@@ -183,14 +190,30 @@ export class Final_Project extends Scene {
     }
 
     make_control_panel() {
-        this.key_triggered_button("Move Backwards", ["W"], () => 
-            {this.y_coord = this.y_coord - 0.2; this.direction_angle = this.set_direction_angle(180); }); //console.log("GOING THIS DIRECTION: " + this.direction_angle); console.log("---");});
-        this.key_triggered_button("Move Left",      ["A"], () => 
-            {this.x_coord = this.x_coord - 0.2; this.direction_angle = this.set_direction_angle(270); });  //console.log("GOING THIS DIRECTION: " + this.direction_angle); console.log("---");});
-        this.key_triggered_button("Move Forward",   ["S"], () => 
-            {this.y_coord = this.y_coord + 0.2; this.direction_angle = this.set_direction_angle(0); });  //console.log("GOING THIS DIRECTION: " + this.direction_angle); console.log("---");});
-        this.key_triggered_button("Move Right",     ["D"], () => 
-            {this.x_coord = this.x_coord + 0.2; this.direction_angle = this.set_direction_angle(90); });  //console.log("GOING THIS DIRECTION: " + this.direction_angle); console.log("---");});
+//         this.key_triggered_button("Back", ["Shift","W"], () => 
+//             {this.y_coord -= dt*2; this.direction_angle = this.set_direction_angle(180); }); //console.log("GOING THIS DIRECTION: " + this.direction_angle); console.log("---");});
+//         this.key_triggered_button("Left",      ["Shift", "A"], () => 
+//             {this.x_coord -= dt*2; this.direction_angle = this.set_direction_angle(270); });  //console.log("GOING THIS DIRECTION: " + this.direction_angle); console.log("---");});
+//         this.key_triggered_button("Forward",   ["Shift", "S"], () => 
+//             {this.y_coord += dt*2; this.direction_angle = this.set_direction_angle(0); });  //console.log("GOING THIS DIRECTION: " + this.direction_angle); console.log("---");});
+//         this.key_triggered_button("Right",     ["Shift", "D"], () => 
+//             {this.x_coord += dt*2; this.direction_angle = this.set_direction_angle(90); });  //console.log("GOING THIS DIRECTION: " + this.direction_angle); console.log("---");});
+
+        this.key_triggered_button("Back", ["Shift","W"], 
+            () => { this.control.w = this.control.s==true ? false : true; if(!this.control.s) this.direction_angle = this.set_direction_angle(180); }, '#6E6468',
+            () => { this.control.w = false;}); //console.log("GOING THIS DIRECTION: " + this.direction_angle); console.log("---");});
+        this.key_triggered_button("Left",      ["Shift","A"],  
+            () => { this.control.a = this.control.d==true ? false : true; if(!this.control.d) this.direction_angle = this.set_direction_angle(270); }, '#6E6468',
+            () => { this.control.a = false;}); 
+        this.key_triggered_button("Forward",   ["Shift","S"],
+            () => { this.control.s = this.control.w==true ? false : true; if(!this.control.w) this.direction_angle = this.set_direction_angle(0); }, '#6E6468',
+            () => { this.control.s = false;});  
+        this.key_triggered_button("Right",     ["Shift","D"],
+            () => { this.control.d = this.control.a==true ? false : true; if(!this.control.a) this.direction_angle = this.set_direction_angle(90); }, '#6E6468',
+            () => { this.control.d = false;}); 
+        this.key_triggered_button("Run",     ["Shift"," "],
+            () => this.control.run = true , '#6E6468', () => this.control.run = false); 
+
         this.key_triggered_button("Look Left [not working]", ["z"], () => {this.move_camera_left()});
         this.key_triggered_button("Look Right [not working]", ["x"], () => {this.move_camera_right()});
         this.new_line();
@@ -575,12 +598,24 @@ export class Final_Project extends Scene {
     }
 
     
-    draw_leg(context, program_state, model_transform, t, skin_material, pant_material) {
-        let feet = model_transform.times(Mat4.translation(0,0,-3.65)).times(Mat4.scale(0.5,0.5,0.5));
-        model_transform = model_transform
+    draw_leg(context, program_state, model_transform, t, skin_material, pant_material, r) {
+        if (this.control.run) this.upper_angle = Math.sin(100*t)*0.5;
+        else this.upper_angle = Math.sin(2*t)*0.5;
+        let feet = model_transform
+        if (r) {
+            feet = feet.times(Mat4.rotation(this.upper_angle,1,0,0)).times(Mat4.translation(0,0,-3.65)).times(Mat4.scale(0.5,0.5,0.5));
+            model_transform = model_transform
+                            .times(Mat4.rotation(this.upper_angle,1,0,0))
                             .times(Mat4.scale(0.35,0.35,1.2))
                             .times(Mat4.translation(0,0,-(0.5+0.5)))
-                            ;
+                            ; }
+        else {
+            feet = feet.times(Mat4.rotation(-this.upper_angle,1,0,0)).times(Mat4.translation(0,0,-3.65)).times(Mat4.scale(0.5,0.5,0.5));
+            model_transform = model_transform
+                            .times(Mat4.rotation(-this.upper_angle,1,0,0))
+                            .times(Mat4.scale(0.35,0.35,1.2))
+                            .times(Mat4.translation(0,0,-(0.5+0.5)))
+                            ;}
         this.shapes.cc.draw(context, program_state, model_transform, pant_material);
         model_transform = model_transform
                             .times(Mat4.scale(0.9,0.9,1.2))
@@ -606,7 +641,24 @@ export class Final_Project extends Scene {
         return model_transform;
     }
     
-    move_character(model_transform, t) {
+    set_location(dt) {
+        let speed = 2.0;
+        if(this.control.run) speed = 10.0;
+        if(this.control.w) {
+            this.y_coord -= dt*speed;
+        }
+        if(this.control.s) {
+            this.y_coord += dt*speed;
+        }
+        if(this.control.a) {
+            this.x_coord -= dt*speed;
+        }
+        if(this.control.d) {
+            this.x_coord += dt*speed;
+        }
+    }
+
+    move_character(model_transform, dt) {
         model_transform = model_transform
             .times(Mat4.translation(this.x_coord, 0, this.y_coord))
             .times(Mat4.rotation(this.direction_angle*Math.PI/180,0,1,0));
@@ -657,10 +709,12 @@ export class Final_Project extends Scene {
         let skin_material = this.materials.test.override({color:this.skin_color});
         
         let ident = Mat4.identity();
-        let location_transform = this.move_character(Mat4.identity(), t);
+        this.set_location(dt); 
+        let location_transform = this.move_character(Mat4.identity(), dt);
         let body_transform = location_transform.times(Mat4.rotation(-Math.PI/2,1,0,0));
         let head_transform = Mat4.identity();
         let head_radius = 2.3;
+        
         let arm_angle = Math.sin(2*t)/2;
         let head_angle = Math.sin(2*t)/16;
         //let head_angle = 0;
@@ -717,9 +771,9 @@ export class Final_Project extends Scene {
         this.shapes.s.draw(context, program_state, body_transform.times(Mat4.scale(1,1,1)), pant_material);
         
         let l_leg_transform = body_transform.times(Mat4.translation(-0.5,0,0));
-        this.draw_leg(context, program_state, l_leg_transform, t, skin_material, pant_material);
+        this.draw_leg(context, program_state, l_leg_transform, t, skin_material, pant_material, false);
         let r_leg_transform = body_transform.times(Mat4.translation(0.5,0,0));
-        this.draw_leg(context, program_state, r_leg_transform, t, skin_material, pant_material);
+        this.draw_leg(context, program_state, r_leg_transform, t, skin_material, pant_material, true);
 
         //arms
         this.draw_arm(context, program_state, r_arm_transform, t, skin_material, shirt_material);
