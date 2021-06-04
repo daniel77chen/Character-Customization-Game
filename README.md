@@ -8,7 +8,7 @@
 ### Customizing your Character 🧑👕👖🎤
 You can click on different buttons to change your character and switch the background from a variety of choices! Additionally, click on "Get a character!" to generate a random set of looks, accessories, and backgrounds! 
 
-<img width="828" alt="Screen Shot 2021-06-03 at 10 51 02 PM" src="https://user-images.githubusercontent.com/32944104/120752262-411a3900-c4be-11eb-8f8f-d8efdc95d8a3.png">
+<img width="815" alt="Screen Shot 2021-06-03 at 11 52 32 PM" src="https://user-images.githubusercontent.com/32944104/120758595-e0432e80-c4c6-11eb-9dd5-925a2173a016.png">
 
 Here are a list of things you can change via the **control panel**: 
 * Hair Style
