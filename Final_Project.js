@@ -460,7 +460,8 @@ export class Final_Project extends Scene {
             () => { this.control.d = false; this.set_direction_angle(); }); 
         this.key_triggered_button("Speed Up",     ["Shift"," "],
             () => this.control.run = true , '#e6b93e', () => this.control.run = false); 
-        this.key_triggered_button("Reset Location",     ["Shift","R"], () => this.x_coord = this.y_coord = this.direction_angle = 0);
+        this.key_triggered_button("Reset Location",     ["Shift","R"], 
+            () => this.x_coord = this.y_coord = this.direction_angle = 0, '#e6b93e');
         
         this.new_line();
         this.live_string(box => {
@@ -558,7 +559,10 @@ export class Final_Project extends Scene {
     draw_leg(context, program_state, model_transform, shadow_pass, t, skin_material, pant_material, r) {
         if (this.control.moving) {
             if (this.control.run) this.upper_angle = Math.sin(100*t)*0.5;
-            else this.upper_angle = Math.sin(4*t)*0.5;
+            else if(this.y_coord >= -15) this.upper_angle = Math.sin(4*t)*0.5;
+            else {
+                this.upper_angle = Math.sin((4.0 - (15 + this.y_coord)/7.0)*t)*0.5;
+            }
         }
         else this.upper_angle = 0;
         let feet = model_transform
@@ -655,9 +659,10 @@ let hand_transform = model_transform
     }
     
     set_location(dt) {
-        let speed = 4.0;
-        let max_x = 8.0; let min_x = -8.0; let max_y = 10.0; let min_y = -80.0;
-        if(this.control.run) speed = 10.0;
+        let mult_var = 0.73;
+        let max_x = 18.0; let min_x = -18.0; let max_y = 10.0; let min_y = -80.0;
+        let speed = 4.0 + (max_y - this.y_coord)/5;
+        if(this.control.run) speed += 6.0;
         if(this.control.w) {
             this.y_coord -= dt*speed;
             if(this.y_coord < min_y) this.y_coord = min_y;
@@ -665,16 +670,16 @@ let hand_transform = model_transform
         if(this.control.s) {
             this.y_coord += dt*speed;
             if(this.y_coord > max_y) this.y_coord = max_y;
-            if(this.x_coord > (2*max_x-this.y_coord/2)) this.x_coord = (2*max_x-this.y_coord/2);
-            if(this.x_coord < (2*min_x+this.y_coord/2)) this.x_coord = (2*min_x+this.y_coord/2);
+            if(this.x_coord > ((max_x-this.y_coord)/mult_var)) this.x_coord = ((max_x-this.y_coord)/mult_var);
+            if(this.x_coord < ((min_x+this.y_coord)/mult_var)) this.x_coord = ((min_x+this.y_coord)/mult_var);
         }
         if(this.control.a) {
             this.x_coord -= dt*speed;
-            if(this.x_coord < (2*min_x+this.y_coord/2)) this.x_coord = (2*min_x+this.y_coord/2);
+            if(this.x_coord < (min_x+this.y_coord*mult_var)) this.x_coord = (max_x-this.y_coord*mult_var);
         }
         if(this.control.d) {
             this.x_coord += dt*speed;
-            if(this.x_coord > (2*max_x-this.y_coord/2)) this.x_coord = (2*max_x-this.y_coord/2);
+            if(this.x_coord > (max_x-this.y_coord*mult_var)) this.x_coord = (min_x+this.y_coord*mult_var);
         }
     }
 
