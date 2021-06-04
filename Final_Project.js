@@ -559,10 +559,7 @@ export class Final_Project extends Scene {
     draw_leg(context, program_state, model_transform, shadow_pass, t, skin_material, pant_material, r) {
         if (this.control.moving) {
             if (this.control.run) this.upper_angle = Math.sin(100*t)*0.5;
-            else if(this.y_coord >= -15) this.upper_angle = Math.sin(4*t)*0.5;
-            else {
-                this.upper_angle = Math.sin((4.0 - (15 + this.y_coord)/7.0)*t)*0.5;
-            }
+            else this.upper_angle = Math.sin(5*t)*0.5;
         }
         else this.upper_angle = 0;
         let feet = model_transform
@@ -661,7 +658,7 @@ let hand_transform = model_transform
     set_location(dt) {
         let mult_var = 0.73;
         let max_x = 18.0; let min_x = -18.0; let max_y = 10.0; let min_y = -80.0;
-        let speed = 4.0 + (max_y - this.y_coord)/5;
+        let speed = 4.0 + (max_y - this.y_coord)/8;
         if(this.control.run) speed += 6.0;
         if(this.control.w) {
             this.y_coord -= dt*speed;
