@@ -21,14 +21,14 @@ Here are a list of things you can change via the **control panel**:
 * Background
 
 #### Character Model 👦🏻
-All of the parts and features used to create the character model were entirely built from primitive 3D shapes from examples/common.js. This includes a mix of spheres, cylinders, cone tips, torus, etc. to shape each of the details such as the hair fragments and facial features. 👩‍🦳
+All of the parts and features used to create the character model were entirely built from primitive 3D shapes from examples/common.js. This includes a mix of spheres, cylinders, cone tips, torus, etc. to shape each of the details such as the hair fragments and facial features 👩‍🦳
 
 In the default (non-moving) state, the character displays animations (i.e. swaying arms, bobbing head back and forth, eyes periodically blinking) as it is standing while the user hasn't provided any input to control its movements.
 
 #### Accessories 💍
 Some of the added accessories also offer unique additions to your character. For example: 
-* Adding "Cat Ears" will show subtle animations as the cat ears sway along as the head bobs back and forth. 🐱
-* Selecting "Microphone" will prompt your character to sing a random song, which is also accompanied by extra animations for the mouth opening/closing and arm moving as it holds the mic. 🎤🎶 Beware: it likes singing a lot, so the only way you'll get it to stop is if you take its mic away by selecting "None". 🎤✋
+* Adding "Cat Ears" will show subtle animations as the cat ears sway along as the head bobs back and forth 🐱
+* Selecting "Microphone" will prompt your character to sing a random song, which is also accompanied by extra animations for the mouth opening/closing and arm moving as it holds the mic. 🎤🎶 Beware: it likes singing a lot, so the only way you'll get it to stop is if you take its mic away by selecting "None" 🎤✋
  
 **Hint:** Give your character all the accessories for a suprise 🎊🎁 Though please make sure that your volume isn't too loud 🔊
 
@@ -45,14 +45,17 @@ Aside from just clicking the trigger buttons on the control panel, the recommend
 * **(Shift + R) Reset:** pressing this will return your character to the starting position, facing forward 🔄
 
 ### Advanced Features:
-#### Shadows 
+#### Shadows ❏
+We chose to implement shadows for our advanced feature. To implement the shadows, I relied on the code provided by the TA (see References) for the Shadow Demo. To integrate it into our project we had to change our materials to use the Shadow_Textured_Phong_Shader and separate our code that renders the characters and environment into a separate function. This is because having shadows require the scene to be rendered twice -- a first pass to create a depth texture to obtain depth data for our objects from the point of view of a light, and a second pass to project this texture into the scene so that we can see the physical shadow.
 
+In our project, you can view the shadows cast on the ground and on the character's body as the character moves in place, and the light source/shadows will also move along with the character as the user controls its movements. Note that the shadows appear more prominent during the two "daytime" backgrounds, while they are less visible in the darker backgrounds due to the dimming of the light source.
   
  ### References:
  * Disc 1B Week 9 Slides & Lecture: **smooth control and shadows**
  * Lecture Notes: general knowledge such as **textures, transformations, lighting, camera, materials**
  * Example Demos.js: reference for how to code more advanced features
  * TA's Shadow Demo: https://github.com/Robert-Lu/tiny-graphics-shadow_demo/blob/master/examples/shadow-demo.js#L182 
+ * WebGL Shadows: https://webglfundamentals.org/webgl/lessons/webgl-shadows.html
 ---
 ---
 # tiny-graphics.js
