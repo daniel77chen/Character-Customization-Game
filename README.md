@@ -56,6 +56,16 @@ In our project, you can view the shadows cast on the ground and on the character
  * Example Demos.js: reference for how to code more advanced features
  * TA's Shadow Demo: https://github.com/Robert-Lu/tiny-graphics-shadow_demo/blob/master/examples/shadow-demo.js#L182 
  * WebGL Shadows: https://webglfundamentals.org/webgl/lessons/webgl-shadows.html
+
+### More Screenshots
+<img width="807" alt="Screen Shot 2021-06-03 at 11 36 30 PM" src="https://user-images.githubusercontent.com/32944104/120756841-a113de00-c4c4-11eb-83e2-33bcf97c7bac.png">
+<img width="808" alt="Screen Shot 2021-06-03 at 11 41 28 PM" src="https://user-images.githubusercontent.com/32944104/120757312-4333c600-c4c5-11eb-8810-e7a9f2a0eb06.png">
+<img width="805" alt="Screen Shot 2021-06-03 at 11 40 11 PM" src="https://user-images.githubusercontent.com/32944104/120757475-72e2ce00-c4c5-11eb-8d77-a56a6939544c.png">
+<img width="805" alt="Screen Shot 2021-06-03 at 11 43 27 PM" src="https://user-images.githubusercontent.com/32944104/120757529-81c98080-c4c5-11eb-94fc-219fa3f9be3f.png">
+<img width="807" alt="Screen Shot 2021-06-03 at 11 46 15 PM" src="https://user-images.githubusercontent.com/32944104/120757905-01574f80-c4c6-11eb-863e-6feab1b5d830.png">
+<img width="804" alt="Screen Shot 2021-06-03 at 11 49 12 PM" src="https://user-images.githubusercontent.com/32944104/120758140-52674380-c4c6-11eb-92a0-cc1b8ca344d4.png">
+
+
 ---
 ---
 # tiny-graphics.js
