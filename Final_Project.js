@@ -187,6 +187,8 @@ export class Final_Project extends Scene {
         this.mouth_style = MouthStyle.CLOSED;
         this.is_dark = this.cry = this.has_mic = this.has_cat = this.has_duck = false;
         this.stage = Backgrounds.DAY;
+        this.bgm = new Audio("assets/bg_day.mp3");
+        this.bgm.loop = true;
 
         this.music = new Audio("assets/bubblegum.mp3");
         this.music.loop = true;
@@ -268,16 +270,34 @@ export class Final_Project extends Scene {
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     }
 
+    set_bgm(bg) {
+        this.bgm.pause();
+        switch (bg) {
+            case Backgrounds.DAY:
+                this.bgm = new Audio("assets/bg_day.mp3");     
+                break;
+            case Backgrounds.NIGHT:
+                this.bgm = new Audio("assets/bg_night.mp3");
+                break;
+            case Backgrounds.FUJI:
+                this.bgm = new Audio("assets/bg_fuji.mp3");
+                break;
+            default:
+                this.bgm = new Audio("assets/bg_fire.mp3");                
+        }
+        this.bgm.loop = true;
+        this.bgm.play();
+    }
+
     set_random_song() {
         if (this.do_play_metal()) {
             this.set_metal_song();
         }
         else {
             this.music.pause();
-            let n = Math.floor(Math.random() * 3); //0-2  
-            if (n == 0 ) {this.music = new Audio("assets/bubblegum.mp3");}
-            else if (n == 1 ) {this.music = new Audio("assets/september.mp3");}
-            else {this.music = new Audio("assets/badguy.mp3");}
+            let songs = ["assets/bubblegum.mp3", "assets/september.mp3", "assets/badguy.mp3", "assets/giorno.mp3"];
+            let rand_song = songs[Math.floor(Math.random() * songs.length)];
+            this.music = new Audio(rand_song);
             this.music.loop = true;
         }
     }
@@ -358,10 +378,11 @@ export class Final_Project extends Scene {
         }
         else { this.has_duck = this.has_mic = this.has_cat = false;}
         this.music.pause();
+        this.set_bgm(rand_bg);
     }
 
     make_control_panel() {
-        this.control_panel.innerHTML += "-------------------- Movement Controls --------------------";
+        this.control_panel.innerHTML += "------------------------------------ Movement Controls ------------------------------------";
         this.new_line();
         this.key_triggered_button("Back", ["Shift","W"], 
             () => { this.control.w = this.control.s==true ? false : true; if(!this.control.s) this.direction_angle = this.set_direction_angle(180); }, '#6E6468',
@@ -381,39 +402,43 @@ export class Final_Project extends Scene {
         
         this.new_line();
         this.live_string(box => {
-            box.textContent = "------------------- Customize Character -------------------"
+            box.textContent = "----------------------------------- Customize Character ----------------------------------- | Randomize |"
         });
-        this.key_triggered_button("Get a character!", ["Randomize"], () => {this.randomize();});
+        //this.live_string(box => {box.textContent = "Or click to get a random character -->"});
+        this.key_triggered_button("Give me a character!", ["?"], () => {this.randomize();});
         this.new_line();
         this.live_string(box => {box.textContent = "----- Head and Body"});
         this.new_line();
-        this.key_triggered_button("Default", ["Hair"], () => {this.set_hair(HairStyles.HORN)});
-        this.key_triggered_button("Edgy", ["Hair"], () => {this.set_hair(HairStyles.EDGY)});
-        this.key_triggered_button("Ponytail", ["Hair"], () => {this.set_hair(HairStyles.TAIL)});
-        this.key_triggered_button("Bowl", ["Hair"], () => {this.set_hair(HairStyles.BOWL)});
+        this.live_string(box => {box.textContent = "Hair Color |"});
+        this.key_triggered_button("Default", ["H"], () => {this.set_hair(HairStyles.HORN)});
+        this.key_triggered_button("Edgy", ["H"], () => {this.set_hair(HairStyles.EDGY)});
+        this.key_triggered_button("Ponytail", ["H"], () => {this.set_hair(HairStyles.TAIL)});
+        this.key_triggered_button("Bowl", ["H"], () => {this.set_hair(HairStyles.BOWL)});
+        this.live_string(box => {box.textContent = "| Hair Style |"});
+
+        this.key_triggered_button("Brown", ["H"], () => {this.set_hair_color("#755e48")});
+        this.key_triggered_button("Banana", ["H"], () => {this.set_hair_color("#cc9e3b")});
+        this.key_triggered_button("Dark", ["H"], () => {this.set_hair_color("#231c38")});
+        this.key_triggered_button("Pink", ["H"], () => {this.set_hair_color("#eb8df0")});
         this.new_line();
 
-        this.key_triggered_button("Brown", ["Hair"], () => {this.set_hair_color("#755e48")});
-        this.key_triggered_button("Banana", ["Hair"], () => {this.set_hair_color("#cc9e3b")});
-        this.key_triggered_button("Dark", ["Hair"], () => {this.set_hair_color("#231c38")});
-        this.key_triggered_button("Pink", ["Hair"], () => {this.set_hair_color("#eb8df0")});
+        this.live_string(box => {box.textContent = "Eye Style |"});
+        this.key_triggered_button("Normal", ["Eye"], () => {this.eye_style = EyeStyle.OPEN; this.cry = false;});
+        this.key_triggered_button("Closed", ["Eye"], () => {this.eye_style = EyeStyle.CLOSED; this.cry = false;});
+        this.key_triggered_button("Anime", ["Eye"], () => {this.eye_style = EyeStyle.ANIME; this.cry = false;});
+        this.key_triggered_button("Cry", ["Eye"], () => {this.eye_style = EyeStyle.CRY; this.cry = true;});
+        this.live_string(box => {box.textContent = "| Mouth Style |"});
+        this.key_triggered_button(":|", ["Mouth"], () => {this.mouth_style = MouthStyle.CLOSED});
+        this.key_triggered_button(":>", ["Mouth"], () => {this.mouth_style = MouthStyle.V});
+        this.key_triggered_button(":o", ["Mouth"], () => {this.mouth_style = MouthStyle.OPEN});
         this.new_line();
-
+        this.live_string(box => {box.textContent = "Skin Color |"});
         this.key_triggered_button("Default", ["Skin"], () => {this.set_skin_color("#f5d990")});
         this.key_triggered_button("Burnt", ["Skin"], () => {this.set_skin_color("#ffb885")});
         this.key_triggered_button("Brown", ["Skin"], () => {this.set_skin_color("#5e302a")});
         this.key_triggered_button("Blue", ["Skin"], () => {this.set_skin_color("#3d3d8f")});
         this.new_line();
-        this.key_triggered_button("Normal", ["Eye"], () => {this.eye_style = EyeStyle.OPEN; this.cry = false;});
-        this.key_triggered_button("Closed", ["Eye"], () => {this.eye_style = EyeStyle.CLOSED; this.cry = false;});
-        this.key_triggered_button("Anime", ["Eye"], () => {this.eye_style = EyeStyle.ANIME; this.cry = false;});
-        this.key_triggered_button("Cry", ["Eye"], () => {this.eye_style = EyeStyle.CRY; this.cry = true;});
-
-        this.new_line();
-        this.key_triggered_button(":|", ["Mouth"], () => {this.mouth_style = MouthStyle.CLOSED});
-        this.key_triggered_button(":>", ["Mouth"], () => {this.mouth_style = MouthStyle.V});
-        this.key_triggered_button(":o", ["Mouth"], () => {this.mouth_style = MouthStyle.OPEN});
-        this.new_line();
+        this.live_string(box => {box.textContent = "Clothing |"});
         this.key_triggered_button("Is it wearing a shirt?", ["?"], () => {
                 this.is_wearing_shirt ^= 1;
             });
@@ -423,17 +448,19 @@ export class Final_Project extends Scene {
         this.new_line();
         this.live_string(box => {box.textContent = "----- Other"});
         this.new_line();
-        this.key_triggered_button("None", ["Item"], () => {this.has_mic = false; this.has_cat = false; this.has_duck = false; this.music.pause();});
+        this.live_string(box => {box.textContent = "Accessories |"});
+        this.key_triggered_button("None", ["Item"], () => {this.has_mic = false; this.has_cat = false; this.has_duck = false; this.music.pause(); this.bgm.pause(); this.bgm.play();});
         this.key_triggered_button("Microphone", ["Item"], () => {
-
                 this.has_mic = true;
                 this.set_random_song();
+                this.bgm.pause();
                 this.music.play();
             });
         this.key_triggered_button("Cat Ears", ["Item"], () => {
                 this.has_cat = true;
                 if (this.do_play_metal()) {
                     this.set_metal_song();
+                    this.bgm.pause();
                     this.music.play();
                 }
             });
@@ -441,14 +468,16 @@ export class Final_Project extends Scene {
                 this.has_duck = true;
                 if (this.do_play_metal()) {
                     this.set_metal_song();
+                    this.bgm.pause();
                     this.music.play();
                 }
             });
-        this.key_triggered_button("Day", ["Stage"], () => {this.stage = Backgrounds.DAY; this.is_dark = false;});
-        this.key_triggered_button("Scenic", ["Stage"], () => {this.stage = Backgrounds.FUJI; this.is_dark = false;});
-        this.key_triggered_button("Night", ["Stage"], () => {this.stage = Backgrounds.NIGHT; this.is_dark = true;});
-        this.key_triggered_button("Apocalypse", ["Stage"], () => {this.stage = Backgrounds.APOCALYPSE; this.is_dark = true;});
         this.new_line();
+        this.live_string(box => {box.textContent = "Background |"});
+        this.key_triggered_button("Day", ["Stage"], () => {this.stage = Backgrounds.DAY; this.is_dark = false; this.set_bgm(Backgrounds.DAY);});
+        this.key_triggered_button("Scenic", ["Stage"], () => {this.stage = Backgrounds.FUJI; this.is_dark = false; this.set_bgm(Backgrounds.FUJI);});
+        this.key_triggered_button("Night", ["Stage"], () => {this.stage = Backgrounds.NIGHT; this.is_dark = true; this.set_bgm(Backgrounds.NIGHT);});
+        this.key_triggered_button("Apocalypse", ["Stage"], () => {this.stage = Backgrounds.APOCALYPSE; this.is_dark = true; this.set_bgm(Backgrounds.APOCALYPSE);});
     }
 
 
@@ -719,6 +748,10 @@ display(context, program_state) {
             this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
             // Define the global camera and projection matrices, which are stored in program_state.
             program_state.set_camera(Mat4.translation(0, -1, -18));
+//             this.bgm.muted = true;
+//             this.bgm.autoplay = true;
+//             this.bgm.static = true;
+//             this.bgm.play();
         }
     
         const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
