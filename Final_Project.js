@@ -34,6 +34,19 @@ const Backgrounds = Object.freeze({
     APOCALYPSE: 3
 });
 
+const Tops = Object.freeze({
+   NONE: 0,
+   SHIRT: 1,
+   LONG: 2 
+});
+
+const Bottoms = Object.freeze({
+    NONE: 0,
+    SHORT: 1,
+    LONG: 2,
+    DUCK: 3
+});
+
 export class Final_Project extends Scene {
     constructor() {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
@@ -48,11 +61,13 @@ export class Final_Project extends Scene {
         this.control.s = false;
         this.control.d = false;
         this.control.run = false;
+        this.control.moving = false;
         this.upper_angle = this.lower_angle = 0.0;
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
                s: new defs.Subdivision_Sphere(4),
+               s2: new defs.Subdivision_Sphere(4),
                cc: new defs.Capped_Cylinder(30,30),
                clc: new defs.Closed_Cone(15,15),
                cyt: new defs.Cylindrical_Tube(60,60,[[0, 1], [0, 1]]),
@@ -70,6 +85,14 @@ export class Final_Project extends Scene {
                night: new defs.Cube(),
 
         };
+
+        this.shapes.s2.arrays.texture_coord.forEach(
+            (v,i,l) => l[i] = vec(1.5*v[0],1.5*v[1])
+        );
+
+        this.shapes.cc.arrays.texture_coord.forEach(
+            (v,i,l) => l[i] = vec(.03*v[0],.03*v[1])
+        );
 
         this.shapes.ground.arrays.texture_coord.forEach(
             (v,i,l) => l[i] = vec(12*v[0],12*v[1])
@@ -97,18 +120,31 @@ export class Final_Project extends Scene {
                     {ambient: .7, diffusivity: .6, specularity: 1, color: hex_color("#edea47"),
                     color_texture: null,light_depth_texture: null
                     }),
-                shirt: new Material(new Shadow_Textured_Phong_Shader(1),
+                long_shirt: new Material(new Shadow_Textured_Phong_Shader(1),
                     {ambient: .7, diffusivity: .6, specularity: 1, color: hex_color("#faacac"),
                     color_texture: null,light_depth_texture: null
                     }),
-                pants: new Material(new Shadow_Textured_Phong_Shader(1),
+                short_shirt: new Material(new Shadow_Textured_Phong_Shader(1),
+                    {ambient: .7, diffusivity: .6, specularity: 1, color: hex_color("#e1e5ed"),
+                    color_texture: null,light_depth_texture: null
+                    }),
+                long_pants: new Material(new Shadow_Textured_Phong_Shader(1),
                     {ambient: .7, diffusivity: .6, specularity: 1, color: hex_color("#4794ed"),
+                    color_texture: null,light_depth_texture: null}),
+                short_pants: new Material(new Shadow_Textured_Phong_Shader(1),
+                    {ambient: .7, diffusivity: .6, specularity: 1, color: hex_color("#9c8481"),
                     color_texture: null,light_depth_texture: null}),
                 hair: new Material(new Shadow_Textured_Phong_Shader(1),
                     {ambient: .7, diffusivity: .5, specularity: 0.3, color: hex_color("#755e48"),
                     color_texture: null,light_depth_texture: null}),
                 eye: new Material(new Shadow_Textured_Phong_Shader(1),
                     {ambient: .7, diffusivity: 0, specularity: 0, color: hex_color("#291515"),
+                    color_texture: null,light_depth_texture: null}),
+                belt_strap: new Material(new Shadow_Textured_Phong_Shader(1),
+                    {ambient: .7, diffusivity: .6, specularity: 0, color: hex_color("#2f2f36"),
+                    color_texture: null,light_depth_texture: null}),
+                belt_buckle: new Material(new Shadow_Textured_Phong_Shader(1),
+                    {ambient: .7, diffusivity: .6, specularity: 1, color: hex_color("#C0C0C0"),
                     color_texture: null,light_depth_texture: null}),
 
                 grass: new Material(new Shadow_Textured_Phong_Shader(1), {
@@ -170,6 +206,12 @@ export class Final_Project extends Scene {
                     ambient: .5, diffusivity: 0.9, specularity: 1,
                     color_texture: new Texture("assets/duck.jpg"),
                     light_depth_texture: null
+                }),
+                boxers: new Material(new Shadow_Textured_Phong_Shader(1), {
+                    color: color(.5, .5, .5, 1), 
+                    ambient: .5, diffusivity: 0.9, specularity: 1,
+                    color_texture: new Texture("assets/boxers.jpg"),
+                    light_depth_texture: null
                 })
         }
 
@@ -181,11 +223,12 @@ export class Final_Project extends Scene {
         this.initial_camera_location = Mat4.look_at(vec3(0, 0, 20), vec3(0, .5, 0), vec3(0, 1, 0));
         this.skin_color = hex_color("#f5d990");
         this.hair_color = hex_color("#755e48");
-        this.is_wearing_shirt = this.is_wearing_pants = true;
+        this.top_style = Tops.LONG;
+        this.bottom_style = Bottoms.LONG;
         this.hair_style = HairStyles.HORN;
         this.eye_style = EyeStyle.OPEN;
         this.mouth_style = MouthStyle.CLOSED;
-        this.is_dark = this.cry = this.has_mic = this.has_cat = this.has_duck = false;
+        this.is_dark = this.cry = this.has_mic = this.has_cat = this.has_duck = this.has_belt = false;
         this.stage = Backgrounds.DAY;
         this.bgm = new Audio("assets/bg_day.mp3");
         this.bgm.loop = true;
@@ -200,8 +243,13 @@ export class Final_Project extends Scene {
         // Bind it to TinyGraphics
         this.light_depth_texture = new Buffered_Texture(this.lightDepthTexture);
         this.materials.test.light_depth_texture = this.light_depth_texture;
-        this.materials.shirt.light_depth_texture = this.light_depth_texture;
-        this.materials.pants.light_depth_texture = this.light_depth_texture;
+        this.materials.long_shirt.light_depth_texture = this.light_depth_texture;
+        this.materials.short_shirt.light_depth_texture = this.light_depth_texture;
+        this.materials.long_pants.light_depth_texture = this.light_depth_texture;
+        this.materials.short_pants.light_depth_texture = this.light_depth_texture;
+        this.materials.belt_strap.light_depth_texture = this.light_depth_texture;
+        this.materials.belt_buckle.light_depth_texture = this.light_depth_texture;
+        this.materials.boxers.light_depth_texture = this.light_depth_texture;
         this.materials.hair.light_depth_texture = this.light_depth_texture;
         this.materials.eye.light_depth_texture = this.light_depth_texture;
         this.materials.grass.light_depth_texture = this.light_depth_texture;
@@ -309,7 +357,7 @@ export class Final_Project extends Scene {
     }
 
     do_play_metal() {
-        return this.has_cat && this.has_mic && this.has_duck; 
+        return this.has_cat && this.has_mic && this.has_duck && this.has_belt; 
     }
 
     move_camera_left() {
@@ -336,27 +384,35 @@ export class Final_Project extends Scene {
         this.hair_style = hs;
     }
     
-    set_direction_angle(new_angle) {
-        let difference = this.direction_angle - new_angle;
-        //console.log("DIFFERENCE= " + difference);
-        if(difference === 90 || difference === -90)
-            return new_angle + difference/2;
-        else if(difference === 270 || difference === -270)
-            return 315;
-        else if(difference === 0)
-            return this.direction_angle;
-        else 
-            return new_angle; 
+    set_direction_angle() {
+        let w = this.control.w; let s = this.control.s; let a = this.control.a; let d = this.control.d;
+        if (!w && !s && !a && !d) this.control.moving = false;
+        else this.control.moving = true; 
+        if (w) {
+            if(a) this.direction_angle = 225; 
+            else if(d) this.direction_angle = 135;
+            else this.direction_angle = 180;
+        }
+        else if(s){
+            if(a) this.direction_angle = 315;
+            else if(d) this.direction_angle = 45;
+            else this.direction_angle = 0;
+        }
+        else if(a) this.direction_angle = 270;
+        else if(d) this.direction_angle = 90;
+        else this.direction_angle = this.direction_angle;
     }
 
     randomize() {
+        let top_styles = [Tops.SHIRT, Tops.LONG];
+        let bottom_styles = [Bottoms.SHORT, Bottoms.LONG, Bottoms.DUCK];
         let hair_styles = [HairStyles.HORN, HairStyles.EDGY, HairStyles.TAIL, HairStyles.BOWL];
         let hair_colors = ["#755e48", "#cc9e3b", "#231c38", "#eb8df0"];
-        let skin_colors = ["#f5d990", "#ffb885", "#5e302a", "#3d3d8f"];
+        let skin_colors = ["#f5d990", "#ffb885", "#5e302a", "#3d3d8f", "#fffb00"];
         let eye_styles = [EyeStyle.OPEN, EyeStyle.CLOSED, EyeStyle.ANIME, EyeStyle.CRY];
         let mouth_styles = [MouthStyle.CLOSED, MouthStyle.OPEN, MouthStyle.V];
         let bgs = [Backgrounds.DAY, Backgrounds.NIGHT, Backgrounds.FUJI, Backgrounds.APOCALYPSE];
-        let acc = ["none", "cat", "duck"];
+        let acc = ["none", "cat", "duck", "belt"];
         this.set_hair(hair_styles[Math.floor(Math.random() * hair_styles.length)]);
         this.set_hair_color(hair_colors[Math.floor(Math.random() * hair_colors.length)]);
         this.set_skin_color(skin_colors[Math.floor(Math.random() * skin_colors.length)]);
@@ -364,19 +420,25 @@ export class Final_Project extends Scene {
         this.eye_style = rand_eye;
         if (rand_eye == EyeStyle.CRY) {this.cry = true;} else {this.cry = false;}
         this.mouth_style = mouth_styles[Math.floor(Math.random() * mouth_styles.length)];
+        this.top_style = top_styles[Math.floor(Math.random() * top_styles.length)];
+        this.bottom_style = bottom_styles[Math.floor(Math.random() * bottom_styles.length)];
         let rand_bg = bgs[Math.floor(Math.random() * bgs.length)];
         this.stage = rand_bg;
         if (rand_bg == Backgrounds.DAY || rand_bg == Backgrounds.FUJI) {this.is_dark = false;} else {this.is_dark = true;}
         let rand_acc = acc[Math.floor(Math.random() * acc.length)];
         if (rand_acc === "cat") {
             this.has_cat = true;
-            this.has_duck = this.has_mic = false;
+            this.has_duck = this.has_mic = this.has_belt = false;
         }
         else if (rand_acc === "duck") {
             this.has_duck = true;
-            this.has_cat = this.has_mic = false;
+            this.has_cat = this.has_mic = this.has_belt = false;
         }
-        else { this.has_duck = this.has_mic = this.has_cat = false;}
+        else if (rand_acc === "belt") {
+            this.has_belt = true;
+            this.has_cat = this.has_mic = this.has_duck = false;   
+        }
+        else { this.has_duck = this.has_mic = this.has_cat = this.has_belt = false;}
         this.music.pause();
         this.set_bgm(rand_bg);
     }
@@ -385,26 +447,25 @@ export class Final_Project extends Scene {
         this.control_panel.innerHTML += "------------------------------------ Movement Controls ------------------------------------";
         this.new_line();
         this.key_triggered_button("Back", ["Shift","W"], 
-            () => { this.control.w = this.control.s==true ? false : true; if(!this.control.s) this.direction_angle = this.set_direction_angle(180); }, '#6E6468',
-            () => { this.control.w = false;}); //console.log("GOING THIS DIRECTION: " + this.direction_angle); console.log("---");});
+            () => { this.control.w = true; this.control.s = false; this.set_direction_angle(); }, '#e6b93e',
+            () => { this.control.w = false; this.set_direction_angle(); }); 
         this.key_triggered_button("Left",      ["Shift","A"],  
-            () => { this.control.a = this.control.d==true ? false : true; if(!this.control.d) this.direction_angle = this.set_direction_angle(270); }, '#6E6468',
-            () => { this.control.a = false;}); 
+            () => { this.control.a = true; this.control.d = false; this.set_direction_angle(); }, '#e6b93e',
+            () => { this.control.a = false; this.set_direction_angle(); }); 
         this.key_triggered_button("Forward",   ["Shift","S"],
-            () => { this.control.s = this.control.w==true ? false : true; if(!this.control.w) this.direction_angle = this.set_direction_angle(0); }, '#6E6468',
-            () => { this.control.s = false;});  
+            () => { this.control.s = true; this.control.w = false; this.set_direction_angle(); }, '#e6b93e',
+            () => { this.control.s = false; this.set_direction_angle(); });  
         this.key_triggered_button("Right",     ["Shift","D"],
-            () => { this.control.d = this.control.a==true ? false : true; if(!this.control.a) this.direction_angle = this.set_direction_angle(90); }, '#6E6468',
-            () => { this.control.d = false;}); 
-        this.key_triggered_button("Run",     ["Shift"," "],
-            () => this.control.run = true , '#6E6468', () => this.control.run = false); 
-        this.key_triggered_button("Reset",     ["Shift","R"], () => this.x_coord = this.y_coord = this.direction_angle = 0);
+            () => { this.control.d = true; this.control.a = false; this.set_direction_angle(); }, '#e6b93e',
+            () => { this.control.d = false; this.set_direction_angle(); }); 
+        this.key_triggered_button("Speed Up",     ["Shift"," "],
+            () => this.control.run = true , '#e6b93e', () => this.control.run = false); 
+        this.key_triggered_button("Reset Location",     ["Shift","R"], () => this.x_coord = this.y_coord = this.direction_angle = 0);
         
         this.new_line();
         this.live_string(box => {
-            box.textContent = "----------------------------------- Customize Character ----------------------------------- | Randomize |"
+            box.textContent = "----------------------------------- Customize Character -----------------------------------| Randomize |"
         });
-        //this.live_string(box => {box.textContent = "Or click to get a random character -->"});
         this.key_triggered_button("Give me a character!", ["?"], () => {this.randomize();});
         this.new_line();
         this.live_string(box => {box.textContent = "----- Head and Body"});
@@ -417,7 +478,7 @@ export class Final_Project extends Scene {
         this.live_string(box => {box.textContent = "| Hair Style |"});
 
         this.key_triggered_button("Brown", ["H"], () => {this.set_hair_color("#755e48")});
-        this.key_triggered_button("Banana", ["H"], () => {this.set_hair_color("#cc9e3b")});
+        this.key_triggered_button("Yellow", ["H"], () => {this.set_hair_color("#cc9e3b")});
         this.key_triggered_button("Dark", ["H"], () => {this.set_hair_color("#231c38")});
         this.key_triggered_button("Pink", ["H"], () => {this.set_hair_color("#eb8df0")});
         this.new_line();
@@ -432,24 +493,28 @@ export class Final_Project extends Scene {
         this.key_triggered_button(":>", ["Mouth"], () => {this.mouth_style = MouthStyle.V});
         this.key_triggered_button(":o", ["Mouth"], () => {this.mouth_style = MouthStyle.OPEN});
         this.new_line();
+
         this.live_string(box => {box.textContent = "Skin Color |"});
         this.key_triggered_button("Default", ["Skin"], () => {this.set_skin_color("#f5d990")});
-        this.key_triggered_button("Burnt", ["Skin"], () => {this.set_skin_color("#ffb885")});
+        this.key_triggered_button("Sunburnt", ["Skin"], () => {this.set_skin_color("#ffb885")});
+        this.key_triggered_button("Banana", ["Skin"], () => {this.set_skin_color("#edea47")});
         this.key_triggered_button("Brown", ["Skin"], () => {this.set_skin_color("#5e302a")});
         this.key_triggered_button("Blue", ["Skin"], () => {this.set_skin_color("#3d3d8f")});
         this.new_line();
-        this.live_string(box => {box.textContent = "Clothing |"});
-        this.key_triggered_button("Is it wearing a shirt?", ["?"], () => {
-                this.is_wearing_shirt ^= 1;
-            });
-        this.key_triggered_button("Is it wearing pants?", ["?"], () => {
-                this.is_wearing_pants ^= 1;
-            });
-        this.new_line();
         this.live_string(box => {box.textContent = "----- Other"});
         this.new_line();
+        this.live_string(box => {box.textContent = "Clothing | Shirt |"});
+        this.key_triggered_button("Longsleeve", ["Top"], () => {this.top_style = Tops.LONG});
+        this.key_triggered_button("T-shirt",    ["Top"], () => {this.top_style = Tops.SHIRT});
+        this.key_triggered_button("None",       ["Top"], () => {this.top_style = Tops.NONE});
+        this.live_string(box => {box.textContent = "| Pants |"});
+        this.key_triggered_button("Jeans",  ["Bot"], () => {this.bottom_style = Bottoms.LONG});
+        this.key_triggered_button("Shorts", ["Bot"], () => {this.bottom_style = Bottoms.SHORT});
+        this.key_triggered_button("Duck", ["Bot"], () => {this.bottom_style = Bottoms.DUCK});
+        this.key_triggered_button("None",   ["Bot"], () => {this.bottom_style = Bottoms.NONE});
+        this.new_line();
         this.live_string(box => {box.textContent = "Accessories |"});
-        this.key_triggered_button("None", ["Item"], () => {this.has_mic = false; this.has_cat = false; this.has_duck = false; this.music.pause(); this.bgm.pause(); this.bgm.play();});
+        this.key_triggered_button("None", ["Item"], () => {this.has_mic = false; this.has_cat = false; this.has_duck = false; this.has_belt = false; this.music.pause(); this.bgm.pause(); this.bgm.play();});
         this.key_triggered_button("Microphone", ["Item"], () => {
                 this.has_mic = true;
                 this.set_random_song();
@@ -464,6 +529,14 @@ export class Final_Project extends Scene {
                     this.music.play();
                 }
             });
+        this.key_triggered_button("Belt", ["Item"], () => { 
+                this.has_belt = true; 
+                if (this.do_play_metal()) {
+                    this.set_metal_song();
+                    this.bgm.pause();
+                    this.music.play();
+                }
+            });
         this.key_triggered_button("Duck", ["Item"], () => {
                 this.has_duck = true;
                 if (this.do_play_metal()) {
@@ -472,6 +545,7 @@ export class Final_Project extends Scene {
                     this.music.play();
                 }
             });
+
         this.new_line();
         this.live_string(box => {box.textContent = "Background |"});
         this.key_triggered_button("Day", ["Stage"], () => {this.stage = Backgrounds.DAY; this.is_dark = false; this.set_bgm(Backgrounds.DAY);});
@@ -482,8 +556,11 @@ export class Final_Project extends Scene {
 
 
     draw_leg(context, program_state, model_transform, shadow_pass, t, skin_material, pant_material, r) {
-        if (this.control.run) this.upper_angle = Math.sin(100*t)*0.5;
-        else this.upper_angle = Math.sin(2*t)*0.5;
+        if (this.control.moving) {
+            if (this.control.run) this.upper_angle = Math.sin(100*t)*0.5;
+            else this.upper_angle = Math.sin(4*t)*0.5;
+        }
+        else this.upper_angle = 0;
         let feet = model_transform
         if (r) {
             feet = feet.times(Mat4.rotation(this.upper_angle,1,0,0)).times(Mat4.translation(0,0,-3.65)).times(Mat4.scale(0.5,0.5,0.5));
@@ -499,14 +576,15 @@ export class Final_Project extends Scene {
                             .times(Mat4.scale(0.35,0.35,1.2))
                             .times(Mat4.translation(0,0,-(0.5+0.5)))
                             ;}
-        this.shapes.cc.draw(context, program_state, model_transform, !shadow_pass? this.pure : pant_material);
+        this.shapes.cc.draw(context, program_state, model_transform, !shadow_pass? this.pure : pant_material); //thigh
         model_transform = model_transform
                             .times(Mat4.scale(0.9,0.9,1.2))
                             .times(Mat4.translation(0,0,-0.9))
                             ;
-        this.shapes.cc.draw(context, program_state, model_transform, !shadow_pass? this.pure : pant_material);
-
-        this.shapes.s.draw(context, program_state, feet, !shadow_pass? this.pure : skin_material);
+        if (this.bottom_style == Bottoms.SHORT || this.bottom_style == Bottoms.DUCK) this.shapes.cc.draw(context, program_state, model_transform, !shadow_pass? this.pure : skin_material); //calf
+        else this.shapes.cc.draw(context, program_state, model_transform, !shadow_pass? this.pure : pant_material); //calf
+        
+        this.shapes.s.draw(context, program_state, feet, !shadow_pass? this.pure : skin_material); //feet
         if (this.has_duck) {
         let duck_body = skin_material.override({color:hex_color("#f5c751")}); 
         this.shapes.t.draw(context, program_state, feet
@@ -526,25 +604,29 @@ export class Final_Project extends Scene {
                                 .times(Mat4.scale(0.5,0.5,0.5))
                                 .times(Mat4.translation(0,0,-2))
                                 ;
-        model_transform = model_transform
-                                .times(Mat4.scale(0.3,0.3,2.5))
-                                .times(Mat4.translation(0,0,0.3))                                
-                                ;
-        this.shapes.cc.draw(context, program_state, model_transform, !shadow_pass? this.pure : shirt_material);
+        let upper_arm_transform = model_transform.times(Mat4.scale(0.35,0.35,1.2)).times(Mat4.translation(0,0,1.2));
+        this.shapes.cc.draw(context, program_state, upper_arm_transform, !shadow_pass? this.pure : shirt_material);
+
+        let lower_arm_transform = model_transform.times(Mat4.scale(0.3,0.3,1.5)).times(Mat4.translation(0,0,0.1));
+        if(this.top_style == Tops.SHIRT) this.shapes.cc.draw(context, program_state, lower_arm_transform, !shadow_pass? this.pure : skin_material);        
+        else this.shapes.cc.draw(context, program_state, lower_arm_transform, !shadow_pass? this.pure : shirt_material);        
+        
         this.shapes.s.draw(context, program_state, hand_transform, !shadow_pass? this.pure : skin_material);
         return model_transform;
     }
 
     draw_mic_arm(context, program_state, model_transform, shadow_pass, t, skin_material, shirt_material){
-        let hand_transform = model_transform
+let hand_transform = model_transform
                                 .times(Mat4.scale(0.5,0.5,0.5))
                                 .times(Mat4.translation(0,0,-2))
                                 ;
-        model_transform = model_transform
-                                .times(Mat4.scale(0.3,0.3,2.5))
-                                .times(Mat4.translation(0,0,0.3))                                
-                                ;
-        this.shapes.cc.draw(context, program_state, model_transform, !shadow_pass? this.pure : shirt_material);
+        let upper_arm_transform = model_transform.times(Mat4.scale(0.35,0.35,1.2)).times(Mat4.translation(0,0,1.2));
+        this.shapes.cc.draw(context, program_state, upper_arm_transform, !shadow_pass? this.pure : shirt_material);
+
+        let lower_arm_transform = model_transform.times(Mat4.scale(0.3,0.3,1.5)).times(Mat4.translation(0,0,0.1));
+        if(this.top_style == Tops.SHIRT) this.shapes.cc.draw(context, program_state, lower_arm_transform, !shadow_pass? this.pure : skin_material);        
+        else this.shapes.cc.draw(context, program_state, lower_arm_transform, !shadow_pass? this.pure : shirt_material);        
+        
         this.shapes.s.draw(context, program_state, hand_transform, !shadow_pass? this.pure : skin_material);
 
         let mic_body = skin_material.override({color:hex_color("#292929")}); 
@@ -564,22 +646,35 @@ export class Final_Project extends Scene {
             ,!shadow_pass? this.pure : this.darken_maybe(this.materials.mic, .2));
         return model_transform;
     }
-
+    
+    draw_belt(context, program_state, model_transform, shadow_pass, strap_material, buckle_material) {
+        let strap_transform = model_transform.times(Mat4.scale(1.05,1.05,0.2)).times(Mat4.translation(0,0,-5));
+        this.shapes.cc.draw(context, program_state, strap_transform, !shadow_pass? this.pure : strap_material) //strap
+        let buckle_transform = model_transform.times(Mat4.scale(.3,0.1,0.2)).times(Mat4.translation(0,-10,-5));
+        this.shapes.cube.draw(context, program_state, buckle_transform, !shadow_pass? this.pure : buckle_material) //buckle
+    }
     
     set_location(dt) {
-        let speed = 2.0;
+        let speed = 4.0;
+        let max_x = 8.0; let min_x = -8.0; let max_y = 10.0; let min_y = -80.0;
         if(this.control.run) speed = 10.0;
         if(this.control.w) {
             this.y_coord -= dt*speed;
+            if(this.y_coord < min_y) this.y_coord = min_y;
         }
         if(this.control.s) {
             this.y_coord += dt*speed;
+            if(this.y_coord > max_y) this.y_coord = max_y;
+            if(this.x_coord > (2*max_x-this.y_coord/2)) this.x_coord = (2*max_x-this.y_coord/2);
+            if(this.x_coord < (2*min_x+this.y_coord/2)) this.x_coord = (2*min_x+this.y_coord/2);
         }
         if(this.control.a) {
             this.x_coord -= dt*speed;
+            if(this.x_coord < (2*min_x+this.y_coord/2)) this.x_coord = (2*min_x+this.y_coord/2);
         }
         if(this.control.d) {
             this.x_coord += dt*speed;
+            if(this.x_coord > (2*max_x-this.y_coord/2)) this.x_coord = (2*max_x-this.y_coord/2);
         }
     }
 
@@ -604,13 +699,6 @@ export class Final_Project extends Scene {
         const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
 
         program_state.draw_shadow = draw_shadow;
-
-        if (draw_light_source && shadow_pass) {
-            this.shapes.s.draw(context, program_state,
-                Mat4.translation(light_position[0], light_position[1], light_position[2]).times(Mat4.scale(.5,.5,.5)),
-                this.light_src.override({color: light_color}));
-        }
-
         const BLINK_PERIOD = 5;
         const blink_t = t % BLINK_PERIOD;
         let eye_state = this.eye_style;
@@ -651,10 +739,9 @@ export class Final_Project extends Scene {
                 .times(Mat4.scale(200,150,.001))), !shadow_pass? this.pure : sky_material);
         }
 
-        // this.set_location(dt); 
-        // let location_transform = this.move_character(Mat4.identity(), dt);
         let location_transform = this.location_transform;
         let body_transform = location_transform.times(Mat4.rotation(-Math.PI/2,1,0,0));
+        let belt_transform = body_transform;
         let head_transform = Mat4.identity();
         let head_radius = 2.3;
         let arm_angle = Math.sin(2*t)/2;
@@ -683,14 +770,23 @@ export class Final_Project extends Scene {
                             .times(Mat4.rotation(0.7,0,1,0));
 
         //body & legs
-        let shirt_material = this.is_wearing_shirt ? this.darken_maybe(this.materials.shirt) : skin_material;
-        let pant_material = this.is_wearing_pants ? this.darken_maybe(this.materials.pants) : skin_material;
-        this.shapes.cc.draw(context, program_state, body_transform.times(Mat4.scale(1,1,2)), !shadow_pass? this.pure : shirt_material);
-        body_transform = body_transform.times(Mat4.translation(0,0,1));
-        this.shapes.s.draw(context, program_state, body_transform.times(Mat4.scale(1,1,1)), !shadow_pass? this.pure : shirt_material);
-        body_transform = body_transform.times(Mat4.translation(0,0,-2));
-        this.shapes.s.draw(context, program_state, body_transform.times(Mat4.scale(1,1,1)), !shadow_pass? this.pure : pant_material);
+        let shirt_material = this.darken_maybe(this.materials.long_shirt); //LONG
+        if(this.top_style == Tops.NONE) shirt_material = skin_material; //NONE
+        else if(this.top_style == Tops.SHIRT) shirt_material = this.darken_maybe(this.materials.short_shirt); //SHIRT
+        let pant_material = this.darken_maybe(this.materials.long_pants); //LONG_PANTS
+        if(this.bottom_style == Bottoms.NONE) pant_material = skin_material; //NONE
+        else if(this.bottom_style == Bottoms.SHORT) pant_material = this.darken_maybe(this.materials.short_pants); //SHORT_PANTS
+        else if(this.bottom_style == Bottoms.DUCK) pant_material = this.darken_maybe(this.materials.boxers, .2);
         
+        this.shapes.cc.draw(context, program_state, body_transform.times(Mat4.scale(1,1,2)), !shadow_pass? this.pure : shirt_material); //body
+        body_transform = body_transform.times(Mat4.translation(0,0,1));
+        this.shapes.s.draw(context, program_state, body_transform.times(Mat4.scale(1,1,1)), !shadow_pass? this.pure : shirt_material); //shoulders
+        body_transform = body_transform.times(Mat4.translation(0,0,-2));
+        this.shapes.s2.draw(context, program_state, body_transform.times(Mat4.scale(1,1,1)), !shadow_pass? this.pure : pant_material); //bottom torso
+        
+        if(this.has_belt) 
+            this.draw_belt(context, program_state, belt_transform, shadow_pass, this.darken_maybe(this.materials.belt_strap), this.darken_maybe(this.materials.belt_buckle)); //belt
+
         let l_leg_transform = body_transform.times(Mat4.translation(-0.5,0,0));
         this.draw_leg(context, program_state, l_leg_transform, shadow_pass, t, skin_material, pant_material, false);
         let r_leg_transform = body_transform.times(Mat4.translation(0.5,0,0));
@@ -728,8 +824,6 @@ export class Final_Project extends Scene {
         head_transform = face_transform.times(Mat4.translation(0,.05,-head_radius))
                          .times(Mat4.scale(head_radius,head_radius-.01,head_radius));
         this.shapes.s.draw(context, program_state, head_transform, !shadow_pass? this.pure : skin_material);
-
-        //this.shapes.s.draw(context, program_state, Mat4.scale(3, 3, 3), shadow_pass? this.stars : this.pure);
     }
 
 display(context, program_state) {
@@ -749,10 +843,6 @@ display(context, program_state) {
             this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
             // Define the global camera and projection matrices, which are stored in program_state.
             program_state.set_camera(Mat4.translation(0, -1, -18));
-//             this.bgm.muted = true;
-//             this.bgm.autoplay = true;
-//             this.bgm.static = true;
-//             this.bgm.play();
         }
     
         const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
