@@ -1,3 +1,44 @@
+# Team Grass Final Report
+### Team Members:
+* Jenny Li 
+* Daniel Chen
+
+### Our Project: Character Customization Screen 🧍
+  The Character Customization Screen project allows users to customize their character's physical features and background as well as control their character to walk around the space. There are various acessories, hairstyles, and clothing to experiment with 😁 🔧  
+#### Customizing your Character 🧑👕👖🎤
+You can click on different buttons to change your character and switch the background! Additionally, click on "Get a character!" to generate a random set of looks, accessories, and backgrounds! 
+
+Here are a list of things you can change via the **control panel**: 
+* Hair Style
+* Skin Color
+* Eye Style
+* Mouth Style
+* Top Clothing
+* Bottom Clothing
+* Items
+* Background
+
+Hint: Give you character a "Microphone", "Cat Ears", and "Duck" shoes for a suprise 🎊🎁 Though please make sure that your volume isn't too loud 🔊
+
+#### Moving your Character 🚶
+Aside from just clicking the trigger buttons on the control panel, the recommended way to move the character is using a combination of the WASD and "Space" keys, while holding down "Shift" ⌨️
+* **(Shift + W) Back:** press or hold to move backwards, into the screen. Your character wil be held in place if you're too far 🔼 
+* **(Shift + S) Forward:** press or hold to move forwards, out of the screen. Your character wil be held in place if you're too close 🔽
+* **(Shift + A) Left:** press or hold to move left. If you go too far, you will be teleported to the right-most portion of the screen ◀️
+* **(Shift + D) Right:** press or hold to move right. If you go too far, you will be teleported to the left-most portion of the screen ▶️
+* **(Shift + Space) Run:** hold and combine with other direction keys to move faster 🏃
+* **(Shift + R) Reset:** pressing this will return your character to the starting position, facing forward 🔄
+
+### Advanced Features:
+**Shadows:**  
+
+  
+ ### References:
+ * Disc 1B Week 9 Slides & Lecture: **smooth control and shadows**
+ * Lecture Notes: general knowledge such as **textures, transformations, lighting, camera, materials**
+ * Example Demos.js: reference for how to code more advanced features
+---
+---
 # tiny-graphics.js
 
 This is a small, single file JavaScript utility.  It organizes WebGL programs to be object-oriented and minimally cluttered.  
