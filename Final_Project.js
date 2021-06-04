@@ -466,7 +466,7 @@ export class Final_Project extends Scene {
         this.live_string(box => {
             box.textContent = "----------------------------------- Customize Character -----------------------------------| Randomize |"
         });
-        this.key_triggered_button("Give me a character!", ["?"], () => {this.randomize();});
+        this.key_triggered_button("Get a character!", ["?"], () => {this.randomize();});
         this.new_line();
         this.live_string(box => {box.textContent = "----- Head and Body"});
         this.new_line();
