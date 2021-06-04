@@ -662,11 +662,12 @@ export class Final_Project extends Scene {
         let head_angle = Math.sin(2*t)/16;
         if (this.do_play_metal()) {
             head_angle = Math.sin(35*t)/8;
-            arm_angle = Math.sin(25*t)/2;
-            mic_arm_angle = 1.5 + Math.sin(30*t)/3;
+            arm_angle = Math.sin(35*t)/2;
+            mic_arm_angle = 1.5 + Math.sin(35*t)/3;
         }
         else if (this.has_mic) {
             head_angle = Math.sin(4*t)/16;
+            mic_arm_angle = 1.5 + Math.sin(4*t)/3;
         }
         let r_arm_transform = body_transform
                             .times(Mat4.translation(1.9,0,0))
