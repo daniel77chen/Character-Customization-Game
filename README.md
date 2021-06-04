@@ -18,7 +18,7 @@ Here are a list of things you can change via the **control panel**:
 * Items
 * Background
 
-Hint: Give you character a "Microphone", "Cat Ears", and "Duck" shoes for a suprise 🎊🎁 Though please make sure that your volume isn't too loud 🔊
+Hint: Give you character all the items for a suprise 🎊🎁 Though please make sure that your volume isn't too loud 🔊
 
 #### Moving your Character 🚶
 Aside from just clicking the trigger buttons on the control panel, the recommended way to move the character is using a combination of the WASD and "Space" keys, while holding down "Shift" ⌨️
